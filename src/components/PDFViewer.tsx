@@ -37,7 +37,54 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [dragStart, setDragStart] = useState<{x: number, y: number} | null>(null);
   const [isAddingField, setIsAddingField] = useState<boolean>(false);
+  const [snapToGrid, setSnapToGrid] = useState<boolean>(false);
+  const [gridSize, setGridSize] = useState<number>(10);
   const pageRef = useRef<HTMLDivElement>(null);
+
+  // Function to check if a position would cause overlap with existing fields
+  const checkForOverlap = useCallback((x: number, y: number, width: number, height: number, excludeFieldId?: string): boolean => {
+    const currentField = { x, y, width, height, pageNumber };
+    
+    return formFields.some(field => {
+      if (field.id === excludeFieldId || field.pageNumber !== pageNumber) {
+        return false;
+      }
+      
+      return !(
+        currentField.x >= field.x + field.width ||
+        currentField.x + currentField.width <= field.x ||
+        currentField.y >= field.y + field.height ||
+        currentField.y + currentField.height <= field.y
+      );
+    });
+  }, [formFields, pageNumber]);
+
+  // Function to find a non-overlapping position near the clicked position
+  const findNonOverlappingPosition = useCallback((x: number, y: number, width: number, height: number): { x: number, y: number } => {
+    if (!checkForOverlap(x, y, width, height)) {
+      return { x, y };
+    }
+
+    // Try positions in a spiral pattern around the clicked point
+    const step = 20;
+    for (let radius = step; radius <= 200; radius += step) {
+      for (let angle = 0; angle < 360; angle += 45) {
+        const radians = (angle * Math.PI) / 180;
+        const newX = x + radius * Math.cos(radians);
+        const newY = y + radius * Math.sin(radians);
+        
+        // Ensure position is within reasonable bounds
+        if (newX >= 0 && newY >= 0) {
+          if (!checkForOverlap(newX, newY, width, height)) {
+            return { x: newX, y: newY };
+          }
+        }
+      }
+    }
+    
+    // If no position found, return original position with warning
+    return { x, y };
+  }, [checkForOverlap]);
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
@@ -67,15 +114,23 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
+    const fieldWidth = 150;
+    const fieldHeight = 30;
+    const clickX = x / scale;
+    const clickY = y / scale;
+
+    // Find a non-overlapping position
+    const { x: finalX, y: finalY } = findNonOverlappingPosition(clickX, clickY, fieldWidth, fieldHeight);
+
     const newField: FormField = {
       id: `field_${Date.now()}`,
       type: 'text',
       label: 'New Field',
       name: `field_${Date.now()}`,
-      x: x / scale,
-      y: y / scale,
-      width: 150,
-      height: 30,
+      x: finalX,
+      y: finalY,
+      width: fieldWidth,
+      height: fieldHeight,
       fontSize: 12,
       color: '#000000',
       required: false,
@@ -85,14 +140,22 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 
     onAddField(newField);
     setIsAddingField(false);
+    
+    // Show message if position was adjusted
+    if (finalX !== clickX || finalY !== clickY) {
+      console.log('Field position adjusted to avoid overlap');
+    }
   };
 
   const handleFieldSelect = (field: FormField) => {
     onSelectField(field);
   };
 
-  const handleFieldMove = (fieldId: string, newX: number, newY: number) => {
-    onUpdateField(fieldId, { x: newX, y: newY });
+  const handleFieldMove = (fieldId: string, newX: number, newY: number, isValidPosition?: boolean) => {
+    // Only update position if it's valid (no overlap) or if we want to allow overlaps
+    if (isValidPosition !== false) {
+      onUpdateField(fieldId, { x: newX, y: newY });
+    }
   };
 
   const handleFieldResize = (fieldId: string, newWidth: number, newHeight: number) => {
@@ -142,6 +205,31 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         >
           {isAddingField ? 'Cancel Adding Field' : 'Add Text Field'}
         </button>
+        
+        <div className="grid-controls" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <label style={{ fontSize: '12px' }}>
+            <input
+              type="checkbox"
+              checked={snapToGrid}
+              onChange={(e) => setSnapToGrid(e.target.checked)}
+              style={{ marginRight: '5px' }}
+            />
+            Snap to Grid
+          </label>
+          {snapToGrid && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span style={{ fontSize: '12px' }}>Size:</span>
+              <input
+                type="number"
+                value={gridSize}
+                onChange={(e) => setGridSize(Math.max(5, parseInt(e.target.value) || 10))}
+                min="5"
+                max="50"
+                style={{ width: '50px', fontSize: '12px' }}
+              />
+            </div>
+          )}
+        </div>
         
         <div className="page-controls">
           <button 
@@ -199,6 +287,27 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
           />
         </Document>
 
+        {/* Grid overlay when snap to grid is enabled */}
+        {snapToGrid && (
+          <div 
+            className="grid-overlay"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              pointerEvents: 'none',
+              backgroundImage: `
+                linear-gradient(to right, rgba(0,0,0,0.1) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0,0,0,0.1) 1px, transparent 1px)
+              `,
+              backgroundSize: `${gridSize * scale}px ${gridSize * scale}px`,
+              zIndex: 1
+            }}
+          />
+        )}
+
         {/* Render form field overlays for current page */}
         {formFields
           .filter(field => field.pageNumber === pageNumber)
@@ -209,9 +318,12 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
               scale={scale}
               isSelected={selectedField?.id === field.id}
               onClick={() => handleFieldSelect(field)}
-              onMove={(newX, newY) => handleFieldMove(field.id, newX, newY)}
+              onMove={(newX, newY, isValidPosition) => handleFieldMove(field.id, newX, newY, isValidPosition)}
               onResize={(newWidth, newHeight) => handleFieldResize(field.id, newWidth, newHeight)}
               onDelete={() => onDeleteField(field.id)}
+              allFields={formFields}
+              snapToGrid={snapToGrid}
+              gridSize={gridSize}
             />
           ))}
       </div>
@@ -219,6 +331,9 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
       {isAddingField && (
         <div className="adding-field-hint">
           <p>Click on the PDF to add a text field</p>
+          <p style={{ fontSize: '12px', marginTop: '5px', opacity: 0.8 }}>
+            Fields will be positioned to avoid overlaps
+          </p>
         </div>
       )}
     </div>
