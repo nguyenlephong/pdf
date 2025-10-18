@@ -114,6 +114,116 @@ export class AdvancedPDFService {
   }
 
   /**
+   * Fill form data and flatten the form (remove borders, keep only text content)
+   */
+  static async fillAndFlattenPDFForm(
+    pdfFile: File,
+    formData: PDFFormData,
+    formFields?: FormField[] // Add original form fields to get page info
+  ): Promise<Uint8Array> {
+    try {
+      // Load the PDF
+      const existingPdfBytes = await pdfFile.arrayBuffer();
+      const pdfDoc = await PDFDocument.load(existingPdfBytes);
+      
+      // Get the form
+      const form = pdfDoc.getForm();
+      
+      // Fill the form fields first
+      Object.entries(formData).forEach(([fieldName, value]) => {
+        try {
+          const field = form.getFieldMaybe(fieldName);
+          if (field && field instanceof PDFTextField) {
+            field.setText(String(value));
+          }
+        } catch (error) {
+          console.warn(`Could not fill field ${fieldName}:`, error);
+        }
+      });
+
+      // Create a map of field names to page numbers if formFields is provided
+      const fieldPageMap = new Map<string, number>();
+      if (formFields) {
+        formFields.forEach(field => {
+          fieldPageMap.set(field.name, field.pageNumber);
+        });
+      }
+
+      // Flatten the form - remove form field properties and keep only text content
+      const fields = form.getFields();
+      const pages = pdfDoc.getPages();
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      
+      for (const field of fields) {
+        try {
+          // Get the field's text content
+          const text = field instanceof PDFTextField ? field.getText() : '';
+          
+          // Get the field's position and page before removing it
+          if (text) {
+            const widgets = field.acroField.getWidgets();
+            if (widgets.length > 0) {
+              const widget = widgets[0];
+              const rect = widget.getRectangle();
+              
+              // Find the correct page for this field
+              let targetPage = null;
+              
+              // First try to get page from our field page map
+              const fieldName = field.getName();
+              const pageNumber = fieldPageMap.get(fieldName);
+              if (pageNumber && pageNumber > 0 && pageNumber <= pages.length) {
+                targetPage = pages[pageNumber - 1]; // Convert to 0-based index
+              }
+              
+              // If not found in map, we'll use the fallback logic below
+              
+              // If we couldn't find the page, try to determine it by checking if the field name contains page info
+              if (!targetPage) {
+                const pageMatch = fieldName.match(/page[_-]?(\d+)/i);
+                if (pageMatch) {
+                  const pageNumber = parseInt(pageMatch[1]) - 1; // Convert to 0-based index
+                  if (pageNumber >= 0 && pageNumber < pages.length) {
+                    targetPage = pages[pageNumber];
+                  }
+                }
+              }
+              
+              // If still no page found, use first page as fallback
+              if (!targetPage && pages.length > 0) {
+                targetPage = pages[0];
+              }
+              
+              if (targetPage) {
+                // Draw the text directly on the page
+                targetPage.drawText(text, {
+                  x: rect.x + 2, // Small padding from the border
+                  y: rect.y + rect.height - 15, // Position text in the middle of the field
+                  size: 12,
+                  font: font,
+                  color: rgb(0, 0, 0),
+                });
+              }
+            }
+          }
+          
+          // Remove the form field after extracting its content
+          form.removeField(field);
+        } catch (error) {
+          console.warn(`Could not flatten field ${field.getName()}:`, error);
+        }
+      }
+
+      // Save the PDF
+      const pdfBytes = await pdfDoc.save();
+      return pdfBytes;
+    } catch (error) {
+      console.error('Error filling and flattening PDF form:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Extract form field information from an existing PDF
    */
   static async extractFormFields(pdfFile: File): Promise<FormField[]> {
@@ -164,7 +274,7 @@ export class AdvancedPDFService {
    * Download PDF as file
    */
   static downloadPDF(pdfBytes: Uint8Array, filename: string = 'form.pdf') {
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;

@@ -16,6 +16,7 @@ const PDFFiller: React.FC<PDFFillerProps> = ({
 }) => {
   const [formData, setFormData] = useState<PDFFormData>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [flattenForm, setFlattenForm] = useState(true); // Default to flatten (no borders)
 
   const handleFieldChange = (fieldName: string, value: string | number) => {
     setFormData(prev => ({
@@ -40,11 +41,22 @@ const PDFFiller: React.FC<PDFFillerProps> = ({
       // First generate PDF with form fields
       const pdfWithForm = await AdvancedPDFService.generatePDFWithForm(pdfFile, formFields);
       
-      // Then fill the form with data
-      const filledPdf = await AdvancedPDFService.fillPDFForm(
-        new File([pdfWithForm], 'form.pdf', { type: 'application/pdf' }),
-        formData
-      );
+      let filledPdf: Uint8Array;
+      
+      if (flattenForm) {
+        // Fill the form with data and flatten (remove borders)
+        filledPdf = await AdvancedPDFService.fillAndFlattenPDFForm(
+          new File([new Uint8Array(pdfWithForm)], 'form.pdf', { type: 'application/pdf' }),
+          formData,
+          formFields // Pass formFields to get page information
+        );
+      } else {
+        // Fill the form with data but keep borders
+        filledPdf = await AdvancedPDFService.fillPDFForm(
+          new File([new Uint8Array(pdfWithForm)], 'form.pdf', { type: 'application/pdf' }),
+          formData
+        );
+      }
       
       onPDFGenerated(filledPdf);
       AdvancedPDFService.downloadPDF(filledPdf, 'filled-form.pdf');
@@ -105,6 +117,24 @@ const PDFFiller: React.FC<PDFFillerProps> = ({
         </button>}
       </div>
 
+      <div className="form-group">
+        <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
+          <input
+            type="checkbox"
+            checked={flattenForm}
+            onChange={(e) => setFlattenForm(e.target.checked)}
+            style={{ marginRight: '5px' }}
+          />
+          <span>
+            <strong>Flatten form fields</strong> - Remove borders and keep only text content
+            <br />
+            <small style={{ color: '#666' }}>
+              {flattenForm ? '✓ PDF will contain only text without form field borders' : '⚠ PDF will keep form field borders'}
+            </small>
+          </span>
+        </label>
+      </div>
+
       {formFields.map(field => (
         <div key={field.id} className="form-group">
           <label>
@@ -127,7 +157,8 @@ const PDFFiller: React.FC<PDFFillerProps> = ({
           onClick={generateFilledPDF}
           disabled={isLoading}
         >
-          {isLoading ? 'Generating...' : 'Generate Filled PDF'}
+          {isLoading ? 'Generating...' : 
+           flattenForm ? 'Generate Filled PDF (No Borders)' : 'Generate Filled PDF (With Borders)'}
         </button>
       </div>
 
