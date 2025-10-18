@@ -3,7 +3,6 @@ import './App.css';
 import PDFViewer from './components/PDFViewer';
 import FormConfigPanel from './components/FormConfigPanel';
 import PDFFiller from './components/PDFFiller';
-import AppInfo from './components/AppInfo';
 import { FormField } from './types/FormField';
 import { AdvancedPDFService as SimplePDFService } from './services/AdvancedPDFService';
 // import { SimplePDFService } from './services/SimplePDFService';
@@ -79,9 +78,14 @@ function App() {
     setSelectedField(null);
   };
 
+  const handleLoadPDFWithConfig = (loadedPDF: File, loadedFields: FormField[]) => {
+    setPdfFile(loadedPDF);
+    setFormFields(loadedFields);
+    setSelectedField(null);
+  };
+
   return (
     <div className="App">
-      <AppInfo />
       <header className="App-header">
         <h1>PDF Form Builder</h1>
       </header>
@@ -102,12 +106,13 @@ function App() {
           <FormConfigPanel
             selectedField={selectedField}
             formFields={formFields}
+            pdfFile={pdfFile}
             onUpdateField={handleUpdateField}
             onDeleteField={handleDeleteField}
-            onGeneratePDF={handleGeneratePDF}
             onSelectField={handleSelectField}
             onLoadSamplePDF={handleLoadSamplePDF}
             onImportConfig={handleImportConfig}
+            onLoadPDFWithConfig={handleLoadPDFWithConfig}
           />
           
           <PDFFiller

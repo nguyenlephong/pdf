@@ -1,27 +1,30 @@
 import React from 'react';
 import { FormField } from '../types/FormField';
 import { createSamplePDF } from '../utils/samplePDF';
+import { ConfigPDFService } from '../services/ConfigPDFService';
 
 interface FormConfigPanelProps {
   selectedField: FormField | null;
   formFields: FormField[];
+  pdfFile: File | null;
   onUpdateField: (fieldId: string, updates: Partial<FormField>) => void;
   onDeleteField: (fieldId: string) => void;
-  onGeneratePDF: () => void;
   onSelectField: (field: FormField) => void;
   onLoadSamplePDF: (pdfBytes: Uint8Array) => void;
   onImportConfig: (fields: FormField[]) => void;
+  onLoadPDFWithConfig: (pdfFile: File, formFields: FormField[]) => void;
 }
 
 const FormConfigPanel: React.FC<FormConfigPanelProps> = ({
   selectedField,
   formFields,
+  pdfFile,
   onUpdateField,
   onDeleteField,
-  onGeneratePDF,
   onSelectField,
   onLoadSamplePDF,
-  onImportConfig
+  onImportConfig,
+  onLoadPDFWithConfig
 }) => {
   const handleFieldUpdate = (field: string, value: any) => {
     if (!selectedField) return;
@@ -200,13 +203,25 @@ const FormConfigPanel: React.FC<FormConfigPanelProps> = ({
         
         <button 
           className="button success"
-          onClick={onGeneratePDF}
-          disabled={formFields.length === 0}
+          onClick={async () => {
+            if (!pdfFile || formFields.length === 0) {
+              alert('Please load a PDF and add form fields first');
+              return;
+            }
+            try {
+              await ConfigPDFService.exportPDFWithConfig(pdfFile, formFields);
+              alert('PDF and config files exported successfully!');
+            } catch (error) {
+              console.error('Export error:', error);
+              alert('Error exporting files');
+            }
+          }}
+          disabled={formFields.length === 0 || !pdfFile}
         >
-          Generate PDF with Form Fields
+          Export PDF + Config
         </button>
         
-        <button 
+        {1 < 0 &&<button 
           className="button"
           onClick={async () => {
             try {
@@ -219,29 +234,156 @@ const FormConfigPanel: React.FC<FormConfigPanelProps> = ({
           }}
         >
           Load Sample PDF
-        </button>
+        </button>}
         
-        <button 
-          className="button"
-          onClick={() => {
-            // TODO: Implement export configuration
-            const config = {
-              fields: formFields,
-              timestamp: new Date().toISOString()
-            };
-            const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'pdf-form-config.json';
-            a.click();
-            URL.revokeObjectURL(url);
-          }}
-        >
-          Export Configuration
-        </button>
+          <button 
+            className="button"
+            onClick={() => {
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = '.pdf,.json';
+              input.multiple = true;
+              input.onchange = async (e) => {
+                const files = (e.target as HTMLInputElement).files;
+                if (!files || files.length < 1) {
+                  alert('Please select at least one file');
+                  return;
+                }
+
+                let pdfFile: File | null = null;
+                let configFile: File | null = null;
+
+                // Identify PDF and JSON files
+                for (let i = 0; i < files.length; i++) {
+                  if (files[i].type === 'application/pdf') {
+                    pdfFile = files[i];
+                  } else if (files[i].type === 'application/json' || files[i].name.endsWith('.json')) {
+                    configFile = files[i];
+                  }
+                }
+
+                if (files.length === 1) {
+                  // Single file selected
+                  if (pdfFile) {
+                    alert('PDF file selected. Please also select a JSON config file, or create new form fields.');
+                    onLoadPDFWithConfig(pdfFile, []);
+                  } else if (configFile) {
+                    alert('Config file selected. Please also select the corresponding PDF file.');
+                  }
+                } else if (files.length === 2) {
+                  // Both files selected
+                  if (!pdfFile || !configFile) {
+                    alert('Please select one PDF file and one JSON config file');
+                    return;
+                  }
+
+                  try {
+                    const { pdfFile: loadedPDF, formFields: loadedFields } = 
+                      await ConfigPDFService.importPDFWithConfig(pdfFile, configFile);
+                    onLoadPDFWithConfig(loadedPDF, loadedFields);
+                    alert(`Successfully loaded PDF with ${loadedFields.length} form fields`);
+                  } catch (error) {
+                    console.error('Import error:', error);
+                    alert('Error importing files');
+                  }
+                } else {
+                  alert('Please select maximum 2 files (one PDF and one JSON config)');
+                }
+              };
+              input.click();
+            }}
+          >
+            Import PDF + Config
+          </button>
+
+          <button 
+            className="button"
+            onClick={() => {
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = '.pdf';
+              input.onchange = async (e) => {
+                const files = (e.target as HTMLInputElement).files;
+                if (!files || files.length !== 1) {
+                  alert('Please select one PDF file');
+                  return;
+                }
+
+                const pdfFile = files[0];
+                if (pdfFile.type !== 'application/pdf') {
+                  alert('Please select a valid PDF file');
+                  return;
+                }
+
+                onLoadPDFWithConfig(pdfFile, []);
+                alert('PDF file loaded. You can now add form fields or import a config file.');
+              };
+              input.click();
+            }}
+          >
+            Import PDF Only
+          </button>
+
+          <button 
+            className="button"
+            onClick={() => {
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = '.json';
+              input.onchange = async (e) => {
+                const files = (e.target as HTMLInputElement).files;
+                if (!files || files.length !== 1) {
+                  alert('Please select one JSON config file');
+                  return;
+                }
+
+                const configFile = files[0];
+                if (!configFile.name.endsWith('.json') && configFile.type !== 'application/json') {
+                  alert('Please select a valid JSON config file');
+                  return;
+                }
+
+                // Read and parse config
+                try {
+                  const configText = await configFile.text();
+                  const config = JSON.parse(configText);
+                  
+                  if (!config.formFields || !Array.isArray(config.formFields)) {
+                    alert('Invalid config format. Config must contain formFields array.');
+                    return;
+                  }
+
+                  // Validate and clean form fields
+                  const validatedFields = config.formFields.map((field: any) => ({
+                    id: field.id || `field_${Date.now()}_${Math.random()}`,
+                    type: field.type || 'text',
+                    label: field.label || 'Imported Field',
+                    name: field.name || `field_${Date.now()}`,
+                    x: field.x || 0,
+                    y: field.y || 0,
+                    width: field.width || 150,
+                    height: field.height || 30,
+                    fontSize: field.fontSize || 12,
+                    color: field.color || '#000000',
+                    required: field.required || false,
+                    placeholder: field.placeholder || '',
+                    pageNumber: field.pageNumber || 1
+                  }));
+
+                  onImportConfig(validatedFields);
+                  alert(`Successfully imported ${validatedFields.length} form fields from config. Please load the corresponding PDF file.`);
+                } catch (error) {
+                  console.error('Config import error:', error);
+                  alert('Error importing config file');
+                }
+              };
+              input.click();
+            }}
+          >
+            Import Config Only
+          </button>
         
-        <button 
+        {1 < 0 && <button 
           className="button"
           onClick={() => {
             const input = document.createElement('input');
@@ -292,7 +434,7 @@ const FormConfigPanel: React.FC<FormConfigPanelProps> = ({
           }}
         >
           Import Configuration
-        </button>
+        </button>}
       </div>
     </div>
   );

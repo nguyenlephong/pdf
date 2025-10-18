@@ -93,11 +93,19 @@ const FormFieldOverlay: React.FC<FormFieldOverlayProps> = ({
         height: field.height * scale,
         fontSize: field.fontSize * scale,
         color: field.color,
+        border: isSelected ? '2px solid #007bff' : '1px solid #ddd',
+        backgroundColor: isSelected ? 'rgba(0, 123, 255, 0.1)' : 'rgba(255, 255, 255, 0.8)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'absolute',
+        cursor: 'move',
+        userSelect: 'none',
       }}
       onClick={onClick}
       onMouseDown={handleMouseDown}
     >
-      <span>{field.label}</span>
+      <span style={{ fontSize: '12px', fontWeight: 'bold' }}>{field.label}</span>
       {isSelected && (
         <>
           <div 

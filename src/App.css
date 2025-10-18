@@ -79,28 +79,29 @@
 
 .form-field-overlay {
   position: absolute;
-  border: 2px dashed #007bff;
-  background-color: rgba(0, 123, 255, 0.1);
+  border: 1px solid #ddd;
+  background-color: rgba(255, 255, 255, 0.8);
   cursor: move;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 12px;
-  color: #007bff;
+  color: #333;
   font-weight: bold;
   user-select: none;
+  transition: all 0.2s ease;
 }
 
 .form-field-overlay.selected {
-  border-color: #28a745;
-  background-color: rgba(40, 167, 69, 0.1);
-  color: #28a745;
+  border-color: #007bff;
+  background-color: rgba(0, 123, 255, 0.1);
+  color: #007bff;
 }
 
 .form-field-overlay:hover {
-  border-color: #ffc107;
-  background-color: rgba(255, 193, 7, 0.1);
-  color: #ffc107;
+  border-color: #007bff;
+  background-color: rgba(0, 123, 255, 0.05);
+  color: #007bff;
 }
 
 /* Config Panel Styles */
@@ -157,10 +158,17 @@
   font-size: 14px;
   margin-right: 10px;
   margin-bottom: 10px;
+  transition: background-color 0.2s ease;
+  white-space: nowrap;
 }
 
 .button:hover {
   background-color: #0056b3;
+}
+
+.button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
 }
 
 .button.danger {
@@ -177,6 +185,14 @@
 
 .button.success:hover {
   background-color: #218838;
+}
+
+.button.secondary {
+  background-color: #6c757d;
+}
+
+.button.secondary:hover {
+  background-color: #545b62;
 }
 
 .fields-list {
