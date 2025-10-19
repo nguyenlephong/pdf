@@ -28,3 +28,18 @@ yarn-error.log*
 
 bun.lockb
 package-lock.json
+
+dist
+dist-ssr
+
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
