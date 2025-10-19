@@ -1,0 +1,27 @@
+<div
+  #overlayRef
+  class="form-field-overlay"
+  [class.selected]="isSelected"
+  [class.overlapping]="isOverlapping"
+  [class.dragging]="isDragging"
+  [ngStyle]="getOverlayStyles()"
+  (click)="onClick()"
+  (mousedown)="onMouseDown($event)">
+  
+  <span [ngStyle]="getLabelStyles()">
+    {{ field.label }}
+    <span *ngIf="isOverlapping" class="warning-icon">⚠️</span>
+  </span>
+  
+  <div *ngIf="isSelected" class="field-controls">
+    <div class="resize-handle" 
+         title="Resize field">
+    </div>
+    
+    <button class="delete-handle" 
+            (click)="onDelete()"
+            title="Delete field">
+      ×
+    </button>
+  </div>
+</div>
