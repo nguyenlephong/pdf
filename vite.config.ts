@@ -3,11 +3,15 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    'process.env.NODE_ENV': '"production"',
+    'process.env': {}, // fallback tránh lỗi "process is not defined"
+  },
   build: {
     lib: {
       entry: 'src/main.tsx',
-      name: 'ReactApp',
-      fileName: 'react-app',
+      name: 'PDFDocsSetting',
+      fileName: 'pdf-docs-setting',
       formats: ['umd'],
     },
     rollupOptions: {
