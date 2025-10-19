@@ -108,13 +108,7 @@ const PDFFiller: React.FC<PDFFillerProps> = ({
           Load Sample Data
         </button>
         
-        {1 < 0 && <button 
-          className="button success"
-          onClick={downloadFormPDF}
-          disabled={isLoading}
-        >
-          Download Form Template
-        </button>}
+    
       </div>
 
       <div className="form-group">

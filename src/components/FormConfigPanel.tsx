@@ -1,6 +1,5 @@
 import React from 'react';
 import { FormField } from '../types/FormField';
-import { createSamplePDF } from '../utils/samplePDF';
 import { ConfigPDFService } from '../services/ConfigPDFService';
 
 interface FormConfigPanelProps {
@@ -221,20 +220,6 @@ const FormConfigPanel: React.FC<FormConfigPanelProps> = ({
           Export PDF + Config
         </button>
         
-        {1 < 0 &&<button 
-          className="button"
-          onClick={async () => {
-            try {
-              const samplePdfBytes = await createSamplePDF();
-              onLoadSamplePDF(samplePdfBytes);
-            } catch (error) {
-              console.error('Error creating sample PDF:', error);
-              alert('Error creating sample PDF');
-            }
-          }}
-        >
-          Load Sample PDF
-        </button>}
         
           <button 
             className="button"
