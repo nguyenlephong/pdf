@@ -5,13 +5,16 @@ import FormConfigPanel from './components/FormConfigPanel';
 import PDFFiller from './components/PDFFiller';
 import { FormField } from './types/FormField';
 import { AdvancedPDFService as SimplePDFService } from './services/AdvancedPDFService';
-// import { SimplePDFService } from './services/SimplePDFService';
 
-function App() {
+function App(props: any) {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [formFields, setFormFields] = useState<FormField[]>([]);
   const [selectedField, setSelectedField] = useState<FormField | null>(null);
 
+  React.useEffect(() => {
+    console.log('PDF Docs Setting App received props:', props);
+  }, [props])
+  
   const handlePDFLoad = async (file: File) => {
     setPdfFile(file);
     setFormFields([]);
