@@ -9,7 +9,6 @@ interface FormConfigPanelProps {
   onUpdateField: (fieldId: string, updates: Partial<FormField>) => void;
   onDeleteField: (fieldId: string) => void;
   onSelectField: (field: FormField) => void;
-  onLoadSamplePDF: (pdfBytes: Uint8Array) => void;
   onImportConfig: (fields: FormField[]) => void;
   onLoadPDFWithConfig: (pdfFile: File, formFields: FormField[]) => void;
 }
@@ -21,7 +20,6 @@ const FormConfigPanel: React.FC<FormConfigPanelProps> = ({
   onUpdateField,
   onDeleteField,
   onSelectField,
-  onLoadSamplePDF,
   onImportConfig,
   onLoadPDFWithConfig
 }) => {

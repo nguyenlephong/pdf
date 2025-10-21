@@ -42,3 +42,6 @@ export function unmount(target?: HTMLElement | string) {
     root = null;
   }
 }
+
+// @ts-ignore
+createRoot(document.getElementById('root')!).render(<App {...{}}/>);
