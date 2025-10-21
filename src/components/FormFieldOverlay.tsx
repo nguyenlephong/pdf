@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useRef } from "react";
 import { useDraggable } from "@dnd-kit/core";
+import { Resizable } from 're-resizable';
 import { FormField } from "../types/FormField";
 
 interface FormFieldOverlayProps {
@@ -16,23 +17,12 @@ interface FormFieldOverlayProps {
   gridSize: number;
 }
 
-const resizeHandleStyle = (cursor: string): React.CSSProperties => ({
-  position: "absolute",
-  width: "10px",
-  height: "10px",
-  backgroundColor: "#2196F3",
-  border: "1px solid white",
-  cursor,
-  zIndex: 1001,
-});
-
 const FormFieldOverlay: React.FC<FormFieldOverlayProps> = ({
   field,
   scale,
   isSelected,
   isDragOver = false,
   onClick,
-  onMove,
   onResize,
   onDelete,
   allFields,
@@ -49,229 +39,261 @@ const FormFieldOverlay: React.FC<FormFieldOverlayProps> = ({
     },
   });
 
-  const [isResizing, setIsResizing] = useState(false);
-  const [resizeDirection, setResizeDirection] = useState<string>("");
-  const resizeStartRef = useRef<{
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  } | null>(null);
+  // Local state for resize preview
+  const [localSize, setLocalSize] = useState<{ width: number; height: number } | null>(null);
   const isResizingRef = useRef(false);
 
-  // Function to check if resize would cause overlap with other fields - STRICT CHECK
-  const checkResizeOverlap = useCallback((x: number, y: number, width: number, height: number, excludeFieldId: string): boolean => {
-    return allFields.some((otherField) => {
-      if (otherField.id === excludeFieldId || otherField.pageNumber !== field.pageNumber) {
-        return false;
-      }
+  // Get current size (local state if resizing, otherwise from field)
+  const currentWidth = localSize?.width ?? field.width;
+  const currentHeight = localSize?.height ?? field.height;
 
-      // Check for ANY overlap - even partial overlap is not allowed
-      const hasOverlap = !(
-        x >= otherField.x + otherField.width ||
-        x + width <= otherField.x ||
-        y >= otherField.y + otherField.height ||
-        y + height <= otherField.y
-      );
+  // Check if resize would cause overlap with other fields
+  const checkResizeOverlap = useCallback(
+    (width: number, height: number): boolean => {
+      return allFields.some((otherField) => {
+        if (
+          otherField.id === field.id ||
+          otherField.pageNumber !== field.pageNumber
+        ) {
+          return false;
+        }
 
-      if (hasOverlap) {
-        console.log(`Resize would overlap with field ${otherField.id}:`, {
-          current: { x, y, width, height },
-          other: { x: otherField.x, y: otherField.y, width: otherField.width, height: otherField.height }
-        });
-      }
+        // Check for ANY overlap - even partial overlap is not allowed
+        const hasOverlap = !(
+          field.x >= otherField.x + otherField.width ||
+          field.x + width <= otherField.x ||
+          field.y >= otherField.y + otherField.height ||
+          field.y + height <= otherField.y
+        );
 
-      return hasOverlap;
-    });
-  }, [allFields, field.pageNumber]);
+        if (hasOverlap) {
+          console.log(`Resize would overlap with field ${otherField.id}:`, {
+            current: { x: field.x, y: field.y, width, height },
+            other: {
+              x: otherField.x,
+              y: otherField.y,
+              width: otherField.width,
+              height: otherField.height,
+            },
+          });
+        }
 
-  // Memoized mouse move handler to prevent unnecessary re-renders
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!resizeStartRef.current) return;
-    
-    const deltaX = (e.clientX - resizeStartRef.current.x) / scale;
-    const deltaY = (e.clientY - resizeStartRef.current.y) / scale;
-    
-    let newWidth = resizeStartRef.current.width;
-    let newHeight = resizeStartRef.current.height;
-    
-    // Chỉ mở rộng theo hướng kéo, giữ nguyên góc trái-trên
-    if (resizeDirection.includes("right")) {
-      newWidth = Math.max(50, resizeStartRef.current.width + deltaX);
-    }
-    if (resizeDirection.includes("bottom")) {
-      newHeight = Math.max(20, resizeStartRef.current.height + deltaY);
-    }
-    
-    // Kiểm tra overlap với các field khác trước khi resize - STRICT CHECK
-    const hasOverlap = checkResizeOverlap(field.x, field.y, newWidth, newHeight, field.id);
-    
-    if (!hasOverlap) {
-      console.log("handleMouseMove newWidth", newWidth, "newHeight", newHeight);
-      onResize(newWidth, newHeight);
-    } else {
-      console.log("Cannot resize - would cause overlap with another field");
-    }
-  }, [resizeDirection, scale, field.x, field.y, field.id, checkResizeOverlap, onResize]);
+        return hasOverlap;
+      });
+    },
+    [allFields, field.pageNumber, field.id, field.x, field.y]
+  );
 
-  // Memoized mouse up handler
-  const handleMouseUp = useCallback(() => {
-    setIsResizing(false);
-    isResizingRef.current = false;
-    setResizeDirection("");
-    resizeStartRef.current = null;
-    console.log("handleMouseUp called - resize completed");
-  }, []);
-
-  useEffect(() => {
-    if (!isResizing) return;
-
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
-
-    return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [isResizing, handleMouseMove, handleMouseUp]);
-
-  const handleResizeStart = (e: React.MouseEvent, direction: string) => {
-    e.stopPropagation();
-    setIsResizing(true);
+  const handleResizeStart = useCallback(() => {
+    console.log("Resize start");
     isResizingRef.current = true;
-    setResizeDirection(direction);
-    resizeStartRef.current = {
-      x: e.clientX,  // Lưu vị trí chuột, không phải field.x
-      y: e.clientY,  // Lưu vị trí chuột, không phải field.y
-      width: field.width,
-      height: field.height,
-    };
-    console.log("handleResizeStart", resizeStartRef.current);
-  };
+    // Initialize local size from field
+    setLocalSize({ width: field.width, height: field.height });
+  }, [field.width, field.height]);
 
-  const style: React.CSSProperties = useMemo(() => {
-    return {
+  // Handle resize - update local state only
+  const handleResize = useCallback(
+    (
+      event: MouseEvent | TouchEvent,
+      direction: string,
+      refToElement: HTMLElement,
+      delta: { width: number; height: number }
+    ) => {
+      const newWidth = field.width + delta.width / scale;
+      const newHeight = field.height + delta.height / scale;
+
+      console.log("Resizing:", { newWidth, newHeight, delta });
+
+      // Check overlap before updating local state
+      if (!checkResizeOverlap(newWidth, newHeight)) {
+        setLocalSize({ width: newWidth, height: newHeight });
+      } else {
+        console.log("Cannot resize - would cause overlap");
+      }
+    },
+    [field.width, field.height, scale, checkResizeOverlap]
+  );
+
+  // Handle resize stop - commit to parent
+  const handleResizeStop = useCallback(
+    (
+      event: MouseEvent | TouchEvent,
+      direction: string,
+      refToElement: HTMLElement,
+      delta: { width: number; height: number }
+    ) => {
+      console.log("Resize stop");
+      isResizingRef.current = false;
+
+      if (localSize) {
+        // Final check before committing
+        if (!checkResizeOverlap(localSize.width, localSize.height)) {
+          console.log("Committing resize to parent:", localSize);
+          onResize(localSize.width, localSize.height);
+        } else {
+          console.log("Cannot commit resize - overlap detected");
+        }
+      }
+
+      // Clear local state
+      setLocalSize(null);
+    },
+    [localSize, checkResizeOverlap, onResize]
+  );
+
+  const containerStyle: React.CSSProperties = useMemo(
+    () => ({
       position: "absolute",
       left: `${field.x * scale}px`,
       top: `${field.y * scale}px`,
-      width: `${field.width * scale}px`,
-      height: `${field.height * scale}px`,
-      border: isSelected ? "2px solid #2196F3" : "1px solid #999",
-      backgroundColor: isDragOver 
-        ? "rgba(255, 193, 7, 0.3)" 
-        : "rgba(33, 150, 243, 0.1)",
-      cursor: isResizing ? "nwse-resize" : "move",
-      boxSizing: "border-box",
       zIndex: isSelected ? 1000 : 100,
-      // Keep box fixed while resizing: ignore drag transform during resize using ref
       transform:
         !isResizingRef.current && transform
           ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
           : undefined,
-    }
-  }, [field.x, field.y, field.width, field.height, scale, isSelected, isDragOver, isResizing, transform]);
+    }),
+    [field.x, field.y, scale, isSelected, transform]
+  );
 
-  console.log("field", field.id, "isResizing:", isResizing, "isResizingRef:", isResizingRef.current);
+  const resizableStyle: React.CSSProperties = useMemo(
+    () => ({
+      border: isSelected ? "2px solid #2196F3" : "1px solid #999",
+      backgroundColor: isDragOver
+        ? "rgba(255, 193, 7, 0.3)"
+        : "rgba(33, 150, 243, 0.1)",
+      boxSizing: "border-box",
+      display: "flex",
+      alignItems: "flex-start",
+      padding: "2px",
+    }),
+    [isSelected, isDragOver]
+  );
+
+  const handleStyles = useMemo(
+    () => ({
+      right: {
+        width: "10px",
+        height: "100%",
+        right: "-5px",
+        top: "0",
+        cursor: "ew-resize",
+        backgroundColor: isSelected ? "#2196F3" : "transparent",
+        border: isSelected ? "1px solid white" : "none",
+      },
+      bottom: {
+        width: "100%",
+        height: "10px",
+        bottom: "-5px",
+        left: "0",
+        cursor: "ns-resize",
+        backgroundColor: isSelected ? "#2196F3" : "transparent",
+        border: isSelected ? "1px solid white" : "none",
+      },
+      bottomRight: {
+        width: "10px",
+        height: "10px",
+        right: "-5px",
+        bottom: "-5px",
+        cursor: "nwse-resize",
+        backgroundColor: isSelected ? "#2196F3" : "transparent",
+        border: isSelected ? "1px solid white" : "none",
+      },
+    }),
+    [isSelected]
+  );
 
   return (
     <div
       ref={setNodeRef}
-      style={style}
-      onClick={onClick}
-      // Disable drag listeners while resizing using ref to prevent box movement
-      {...(!isResizingRef.current ? listeners : {})}
+      style={containerStyle}
       {...attributes}
     >
-      {/* Field label */}
-      <div
-        style={{
-          fontSize: `${Math.max(8, field.fontSize * scale * 0.8)}px`,
-          color: field.color,
-          padding: "2px",
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          pointerEvents: "none",
-          userSelect: "none",
+      <Resizable
+        size={{
+          width: currentWidth * scale,
+          height: currentHeight * scale,
         }}
+        minWidth={50 * scale}
+        minHeight={20 * scale}
+        enable={
+          isSelected
+            ? {
+                top: false,
+                right: false,
+                bottom: false,
+                left: false,
+                topRight: false,
+                bottomRight: true,
+                bottomLeft: false,
+                topLeft: false,
+              }
+            : false
+        }
+        onResizeStart={handleResizeStart}
+        onResize={handleResize}
+        onResizeStop={handleResizeStop}
+        handleStyles={handleStyles}
+        style={resizableStyle}
+        scale={scale}
       >
-        {field.label}
-      </div>
-
-      {/* Delete button */}
-      {isSelected && (
-        <button
-          onClick={(e) => {
-            console.log("FormFieldOverlay: Delete button clicked for field:", field.id);
-            e.stopPropagation();
-            e.preventDefault();
-            onDelete(e);
-          }}
-          onPointerDown={(e) => {
-            // Chặn drag bằng cách stop propagation
-            e.stopPropagation();
-          }}
+        <div
+          {...(!isResizingRef.current ? listeners : {})}
+          onClick={onClick}
           style={{
-            position: "absolute",
-            top: "-10px",
-            right: "-10px",
-            width: "20px",
-            height: "20px",
-            borderRadius: "50%",
-            backgroundColor: "#f44336",
-            color: "white",
-            border: "none",
-            cursor: "pointer",
-            fontSize: "12px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1002,
-            pointerEvents: "auto", // Ensure button can receive events
-            touchAction: "none", // Prevent touch scrolling
-
+            width: "100%",
+            height: "100%",
+            cursor: "move",
+            position: "relative",
           }}
         >
-          ×
-        </button>
-      )}
-
-      {/* Resize handles - only show when selected */}
-      {isSelected && (
-        <>
-          {/* Right handle */}
+          {/* Field label */}
           <div
             style={{
-              ...resizeHandleStyle("ew-resize"),
-              right: "-5px",
-              top: "50%",
-              transform: "translateY(-50%)",
+              fontSize: `${Math.max(8, field.fontSize * scale * 0.8)}px`,
+              color: field.color,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              pointerEvents: "none",
+              userSelect: "none",
             }}
-            onMouseDown={(e) => handleResizeStart(e, "right")}
-          />
+          >
+            {field.label}
+          </div>
 
-          {/* Bottom handle */}
-          <div
-            style={{
-              ...resizeHandleStyle("ns-resize"),
-              bottom: "-5px",
-              left: "50%",
-              transform: "translateX(-50%)",
-            }}
-            onMouseDown={(e) => handleResizeStart(e, "bottom")}
-          />
-
-          {/* Bottom-right corner handle */}
-          <div
-            style={{
-              ...resizeHandleStyle("nwse-resize"),
-              bottom: "-5px",
-              right: "-5px",
-            }}
-            onMouseDown={(e) => handleResizeStart(e, "bottom-right")}
-          />
-        </>
-      )}
+          {/* Delete button */}
+          {isSelected && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(e);
+              }}
+              onPointerDown={(e) => {
+                e.stopPropagation();
+              }}
+              style={{
+                position: "absolute",
+                top: "-10px",
+                right: "-10px",
+                width: "20px",
+                height: "20px",
+                borderRadius: "50%",
+                backgroundColor: "#f44336",
+                color: "white",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "12px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 1002,
+              }}
+            >
+              ×
+            </button>
+          )}
+        </div>
+      </Resizable>
     </div>
   );
 };
