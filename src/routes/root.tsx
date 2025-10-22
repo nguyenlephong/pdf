@@ -1,0 +1,23 @@
+import { Link, Outlet, useNavigation } from "react-router";
+
+export default function RootLayout() {
+  const navigation = useNavigation();
+  return (
+    <div>
+      <header style={{ padding: "1rem", background: "#eee" }}>
+        <nav style={{ display: "flex", gap: "1rem" }}>
+          <Link to="/">Home</Link>
+          <Link to="/pdf">PDF</Link>
+        </nav>
+      </header>
+      
+      {navigation.state === "loading" && (
+        <div style={{ padding: "1rem", color: "blue" }}>Loading…</div>
+      )}
+      
+      <main style={{ padding: "2rem" }}>
+        <Outlet />
+      </main>
+    </div>
+  );
+}
