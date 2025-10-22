@@ -309,6 +309,7 @@ const PDFViewer: React.FC<PDFViewerProps> = (props) => {
     
     const newField: FormField = {
       id: `field_${Date.now()}`,
+      ts: Date.now(),
       type: fieldType,
       label: `Field ${fieldCounter}`,
       name: `field_${fieldCounter}`,
@@ -321,6 +322,7 @@ const PDFViewer: React.FC<PDFViewerProps> = (props) => {
       required: false,
       placeholder: "Enter text...",
       pageNumber: pageNumber,
+      position: -1
     };
     
     onAddField(newField);
@@ -669,7 +671,6 @@ const PDFViewer: React.FC<PDFViewerProps> = (props) => {
                       />
                     </Document>
                     
-                    {/* Grid overlay when snap to grid is enabled */}
                     {snapToGrid && (
                       <div
                         className="grid-overlay"
@@ -690,12 +691,12 @@ const PDFViewer: React.FC<PDFViewerProps> = (props) => {
                       />
                     )}
                     
-                    {/* Render form field overlays for current page */}
                     {formFields
                       .filter((field) => field.pageNumber === pageNumber)
                       .map((field) => (
                         <FormFieldOverlay
                           key={field.id}
+                          position={field.position}
                           field={field}
                           scale={scale}
                           isSelected={selectedField?.id === field.id}

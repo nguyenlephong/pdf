@@ -1,7 +1,7 @@
-import React, { useState, useMemo, useCallback, useRef } from "react";
-import { useDraggable } from "@dnd-kit/core";
-import { Resizable } from 're-resizable';
-import { FormField } from "../types/FormField";
+import React, {useCallback, useMemo, useRef, useState} from "react";
+import {useDraggable} from "@dnd-kit/core";
+import {Resizable} from 're-resizable';
+import {FormField} from "../types/FormField";
 
 interface FormFieldOverlayProps {
   field: FormField;
@@ -15,20 +15,23 @@ interface FormFieldOverlayProps {
   allFields: FormField[];
   snapToGrid: boolean;
   gridSize: number;
+  position: number;
 }
 
-const FormFieldOverlay: React.FC<FormFieldOverlayProps> = ({
-  field,
-  scale,
-  isSelected,
-  isDragOver = false,
-  onClick,
-  onResize,
-  onDelete,
-  allFields,
-  snapToGrid,
-  gridSize,
-}) => {
+const FormFieldOverlay: React.FC<FormFieldOverlayProps> = (props) => {
+  const {
+    field,
+    scale,
+    isSelected,
+    isDragOver = false,
+    onClick,
+    onResize,
+    onDelete,
+    allFields,
+    snapToGrid,
+    gridSize,
+  } = props;
+  
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: field.id,
     data: {
@@ -171,32 +174,15 @@ const FormFieldOverlay: React.FC<FormFieldOverlayProps> = ({
 
   const handleStyles = useMemo(
     () => ({
-      right: {
-        width: "10px",
-        height: "100%",
-        right: "-5px",
-        top: "0",
-        cursor: "ew-resize",
-        backgroundColor: isSelected ? "#2196F3" : "transparent",
-        border: isSelected ? "1px solid white" : "none",
-      },
-      bottom: {
-        width: "100%",
-        height: "10px",
-        bottom: "-5px",
-        left: "0",
-        cursor: "ns-resize",
-        backgroundColor: isSelected ? "#2196F3" : "transparent",
-        border: isSelected ? "1px solid white" : "none",
-      },
       bottomRight: {
-        width: "10px",
-        height: "10px",
+        width: "6px",
+        height: "6px",
         right: "-5px",
         bottom: "-5px",
         cursor: "nwse-resize",
         backgroundColor: isSelected ? "#2196F3" : "transparent",
         border: isSelected ? "1px solid white" : "none",
+        borderRadius: 3
       },
     }),
     [isSelected]

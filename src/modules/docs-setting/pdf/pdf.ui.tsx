@@ -34,7 +34,13 @@ function PDFSettingPage(props: any) {
   };
   
   const handleAddField = (field: FormField) => {
-    setFormFields([...formFields, field]);
+    const dataFields = [...formFields, field]
+      .sort((x, y) => x.ts - y.ts)
+      .map((x, ind) => {
+        return {...x, position: ind + 1};
+      });
+    
+    setFormFields(dataFields);
   };
   
   const handleUpdateField = (fieldId: string, updates: Partial<FormField>) => {
@@ -78,36 +84,37 @@ function PDFSettingPage(props: any) {
   
   return (
     <div className="mfe-pdf-setting-page">
-        <Row className={"main-container"} gutter={24}>
-          <Col xs={24} xl={12} xxl={16}>
-            <div className="pdf-container">
-              <PDFViewer
-                pdfFile={pdfFile}
-                setPageActive={setPageActive}
-                formFields={formFields}
-                onAddField={handleAddField}
-                onSelectField={handleSelectField}
-                selectedField={selectedField}
-                onPDFLoad={handlePDFLoad}
-                onUpdateField={handleUpdateField}
-                onDeleteField={handleDeleteField}
-              />
-            </div>
-          </Col>
-          <Col xs={24} xl={12} xxl={8}>
-            <div className="pdf-config-container">
-              <FormConfigPanel
-                selectedField={selectedField}
-                formFields={formFields}
-                pdfFile={pdfFile}
-                pageActive={pageActive}
-                onUpdateField={handleUpdateField}
-                onDeleteField={handleDeleteField}
-                onSelectField={handleSelectField}
-                onImportConfig={handleImportConfig}
-                onLoadPDFWithConfig={handleLoadPDFWithConfig}
-              />
-              
+      <Row className={"main-container"} gutter={24}>
+        <Col xs={24} xl={12} xxl={16}>
+          <div className="pdf-container">
+            <PDFViewer
+              pdfFile={pdfFile}
+              setPageActive={setPageActive}
+              formFields={formFields}
+              onAddField={handleAddField}
+              onSelectField={handleSelectField}
+              selectedField={selectedField}
+              onPDFLoad={handlePDFLoad}
+              onUpdateField={handleUpdateField}
+              onDeleteField={handleDeleteField}
+            />
+          </div>
+        </Col>
+        <Col xs={24} xl={12} xxl={8}>
+          <div className="pdf-config-container">
+            <FormConfigPanel
+              selectedField={selectedField}
+              formFields={formFields}
+              pdfFile={pdfFile}
+              pageActive={pageActive}
+              onUpdateField={handleUpdateField}
+              onDeleteField={handleDeleteField}
+              onSelectField={handleSelectField}
+              onImportConfig={handleImportConfig}
+              onLoadPDFWithConfig={handleLoadPDFWithConfig}
+            />
+            
+            {1 < 0 && (
               <PDFFiller
                 pdfFile={pdfFile}
                 formFields={formFields}
@@ -115,11 +122,12 @@ function PDFSettingPage(props: any) {
                   console.log("PDF generated:", pdfBytes.length, "bytes");
                 }}
               />
-            </div>
-          </Col>
-        </Row>
-      
-      
+            )}
+          </div>
+        </Col>
+      </Row>
+    
+    
     </div>
   );
 }
