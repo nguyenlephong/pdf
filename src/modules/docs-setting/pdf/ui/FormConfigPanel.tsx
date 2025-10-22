@@ -37,6 +37,7 @@ const FormConfigPanel: React.FC<FormConfigPanelProps> = ({
   return (
     <div className="config-panel">
       <div className="config-section">
+        <h1>Chọn vị trí và cấu hình điền</h1>
         <h3>Form Fields ({formFields.length})</h3>
         
         {formFields.length === 0 ? (

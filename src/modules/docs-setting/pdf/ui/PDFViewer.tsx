@@ -41,10 +41,22 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   const [snapToGrid, setSnapToGrid] = useState<boolean>(false);
   const [gridSize, setGridSize] = useState<number>(10);
   const [fieldCounter, setFieldCounter] = useState<number>(0);
-  const [dragOverlapBehavior, setDragOverlapBehavior] = useState<'snap' | 'return'>('snap');
+  const [dragOverlapBehavior, setDragOverlapBehavior] = useState<'snap' | 'return'>('return');
   const [dragOverField, setDragOverField] = useState<string | null>(null);
   const pageRef = useRef<HTMLDivElement>(null);
   // track active dragging via dnd-kit not required for functionality
+  
+  React.useEffect(() => {
+    const wrappers = document.querySelectorAll('#pdf-page-thumbnails .pdf-thumbnail-wrapper');
+    wrappers.forEach((el, index) => {
+      if (index + 1 === pageNumber) el.classList.add('active');
+      else el.classList.remove('active');
+    });
+  }, [pageNumber]);
+  
+  React.useEffect(() => {
+    if (pdfFile) renderThumbnails(pdfFile).then();
+  }, [pdfFile])
   
   const handleDragStart = (event: any) => {
     // Select the field when starting to drag
@@ -226,8 +238,8 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         const file = acceptedFiles[0];
         if (file.type === "application/pdf") {
           onPDFLoad(file);
-          renderThumbnails(window.URL.createObjectURL(file))
           setFieldCounter(0); // Reset counter when new PDF is loaded
+          renderThumbnails(file).then();
         }
       }
     },
@@ -376,35 +388,51 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     }
   };
   
-  const renderThumbnails = async (url: any) => {
-    const pdf = await pdfjs.getDocument(url).promise;
-    const container = document.getElementById('pdf-page-thumbnails')!;
+  const renderThumbnails = async (file: File) => {
     
+    const container = document.getElementById('pdf-page-thumbnails');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    const url = URL.createObjectURL(file);
+    const pdf = await pdfjs.getDocument(url).promise;
+    
+    const scale = 0.2;
+    
+    const fragment = document.createDocumentFragment();
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
-      const viewport = page.getViewport({ scale: 0.2 }); // smaller scale for thumbnail
-      const wrapper = document.createElement('div');
-     
+      const viewport = page.getViewport({scale});
       
+      const wrapper = document.createElement('div');
+      wrapper.className = 'pdf-thumbnail-wrapper';
+      if (pageNumber === i) wrapper.classList.add('active');
       
       const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d');
-      canvas.height = viewport.height;
+      const context = canvas.getContext('2d')!;
       canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      
+      //@ts-ignore
+      await page.render({canvasContext: context, viewport}).promise;
+      
       canvas.addEventListener('click', () => {
         document
           .querySelectorAll('#pdf-page-thumbnails .pdf-thumbnail-wrapper')
           .forEach((el) => el.classList.remove('active'));
         
-        wrapper.classList.add('active'); // activate wrapper instead of canvas
+        wrapper.classList.add('active');
+        wrapper.scrollIntoView({behavior: 'smooth', inline: 'center'});
         setPageNumber(i);
       });
-      await page.render({ canvasContext: context, viewport }).promise;
       
-      wrapper.className = 'pdf-thumbnail-wrapper';
       wrapper.appendChild(canvas);
-      container.appendChild(wrapper);
+      fragment.appendChild(wrapper);
     }
+    
+    container.appendChild(fragment);
+    
+    URL.revokeObjectURL(url);
   }
   
   if (!pdfFile) {
@@ -416,8 +444,8 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         ) : (
           <div>
             <p>Drag & drop a PDF file here, or click to select</p>
-            <button
-              className="button"
+            <Button
+              type={'primary'}
               onClick={(e) => {
                 e.stopPropagation();
                 const input = document.createElement("input");
@@ -427,7 +455,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                   const file = (e.target as HTMLInputElement).files?.[0];
                   if (file) {
                     onPDFLoad(file);
-                    renderThumbnails(window.URL.createObjectURL(file))
                     setFieldCounter(0);
                   }
                 };
@@ -435,7 +462,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
               }}
             >
               Choose PDF File
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -444,120 +471,122 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   
   return (
     <Row className="pdf-viewer" gutter={[12, 12]}>
-      <Col xs={24}>
-        <div className="pdf-controls">
-          
-          <div style={{display: "flex", alignItems: "center", gap: "12px"}}>
-            <div
-              role="button"
-              draggable
-              onDragStart={(e) => {
-                e.dataTransfer.setData("application/x-field-type", "text");
-                // Optional: set drag image
-                const img = document.createElement("div");
-                img.style.width = "120px";
-                img.style.height = "24px";
-                img.style.background = "#2196F3";
-                img.style.color = "white";
-                img.style.display = "flex";
-                img.style.alignItems = "center";
-                img.style.justifyContent = "center";
-                img.style.fontSize = "12px";
-                img.style.borderRadius = "4px";
-                img.textContent = "Text Field";
-                document.body.appendChild(img);
-                e.dataTransfer.setDragImage(img, 60, 12);
-                // Remove after a tick
-                setTimeout(() => document.body.removeChild(img), 0);
-              }}
-              className="button"
-              style={{cursor: "grab"}}
-            >
-              Drag: Text Field
-            </div>
-          </div>
-          
-          
-          <div
-            className="grid-controls"
-            style={{display: "flex", alignItems: "center", gap: "12px"}}
-          >
-            <label style={{fontSize: "12px"}}>
-              <input
-                type="checkbox"
-                checked={snapToGrid}
-                onChange={(e) => setSnapToGrid(e.target.checked)}
-                style={{marginRight: "5px"}}
-              />
-              Snap to Grid
-            </label>
-            {snapToGrid && (
-              <div style={{display: "flex", alignItems: "center", gap: "5px"}}>
-                <span style={{fontSize: "12px"}}>Size:</span>
-                <input
-                  type="number"
-                  value={gridSize}
-                  onChange={(e) =>
-                    setGridSize(Math.max(5, parseInt(e.target.value) || 10))
-                  }
-                  min="5"
-                  max="50"
-                  style={{width: "50px", fontSize: "12px"}}
-                />
-              </div>
-            )}
-          </div>
-          
-          <div
-            className="drag-overlap-controls"
-            style={{display: "flex", alignItems: "center", gap: "12px"}}
-          >
-            <label style={{fontSize: "12px"}}>
-              <span style={{marginRight: "5px"}}>On Overlap:</span>
-              <select
-                value={dragOverlapBehavior}
-                onChange={(e) => setDragOverlapBehavior(e.target.value as 'snap' | 'return')}
-                style={{fontSize: "12px"}}
-              >
-                <option value="snap">Snap to Side</option>
-                <option value="return">Return to Original</option>
-              </select>
-            </label>
-          </div>
-          
-          {/* Debug delete button */}
-          {selectedField && (
+      {1 < 0 && (
+        <Col xs={24}>
+          <div className="pdf-controls">
+            
             <div style={{display: "flex", alignItems: "center", gap: "12px"}}>
-              <button
-                className="button danger"
-                onClick={() => {
-                  console.log("Debug: Deleting selected field:", selectedField.id);
-                  handleFieldDelete(selectedField.id, new MouseEvent('click') as any);
+              <div
+                role="button"
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData("application/x-field-type", "text");
+                  // Optional: set drag image
+                  const img = document.createElement("div");
+                  img.style.width = "120px";
+                  img.style.height = "24px";
+                  img.style.background = "#2196F3";
+                  img.style.color = "white";
+                  img.style.display = "flex";
+                  img.style.alignItems = "center";
+                  img.style.justifyContent = "center";
+                  img.style.fontSize = "12px";
+                  img.style.borderRadius = "4px";
+                  img.textContent = "Text Field";
+                  document.body.appendChild(img);
+                  e.dataTransfer.setDragImage(img, 60, 12);
+                  // Remove after a tick
+                  setTimeout(() => document.body.removeChild(img), 0);
                 }}
-                style={{fontSize: "12px", padding: "5px 10px"}}
+                className="button"
+                style={{cursor: "grab"}}
               >
-                Debug Delete Field
-              </button>
-              <span style={{fontSize: "12px", color: "#666"}}>
+                Drag: Text Field
+              </div>
+            </div>
+            
+            
+            <div
+              className="grid-controls"
+              style={{display: "flex", alignItems: "center", gap: "12px"}}
+            >
+              <label style={{fontSize: "12px"}}>
+                <input
+                  type="checkbox"
+                  checked={snapToGrid}
+                  onChange={(e) => setSnapToGrid(e.target.checked)}
+                  style={{marginRight: "5px"}}
+                />
+                Snap to Grid
+              </label>
+              {snapToGrid && (
+                <div style={{display: "flex", alignItems: "center", gap: "5px"}}>
+                  <span style={{fontSize: "12px"}}>Size:</span>
+                  <input
+                    type="number"
+                    value={gridSize}
+                    onChange={(e) =>
+                      setGridSize(Math.max(5, parseInt(e.target.value) || 10))
+                    }
+                    min="5"
+                    max="50"
+                    style={{width: "50px", fontSize: "12px"}}
+                  />
+                </div>
+              )}
+            </div>
+            
+            <div
+              className="drag-overlap-controls"
+              style={{display: "flex", alignItems: "center", gap: "12px"}}
+            >
+              <label style={{fontSize: "12px"}}>
+                <span style={{marginRight: "5px"}}>On Overlap:</span>
+                <select
+                  value={dragOverlapBehavior}
+                  onChange={(e) => setDragOverlapBehavior(e.target.value as 'snap' | 'return')}
+                  style={{fontSize: "12px"}}
+                >
+                  <option value="snap">Snap to Side</option>
+                  <option value="return">Return to Original</option>
+                </select>
+              </label>
+            </div>
+            
+            {/* Debug delete button */}
+            {selectedField && (
+              <div style={{display: "flex", alignItems: "center", gap: "12px"}}>
+                <button
+                  className="button danger"
+                  onClick={() => {
+                    console.log("Debug: Deleting selected field:", selectedField.id);
+                    handleFieldDelete(selectedField.id, new MouseEvent('click') as any);
+                  }}
+                  style={{fontSize: "12px", padding: "5px 10px"}}
+                >
+                  Debug Delete Field
+                </button>
+                <span style={{fontSize: "12px", color: "#666"}}>
               Selected: {selectedField.label}
             </span>
-            </div>
-          )}
-          
-          <div className="page-controls">
+              </div>
+            )}
+            
+            <div className="page-controls">
             
             <span>
             Page {pageNumber} of {numPages}
           </span>
-            <span style={{marginLeft: "10px", fontSize: "12px", color: "#666"}}>
+              <span style={{marginLeft: "10px", fontSize: "12px", color: "#666"}}>
             ({formFields.filter((f) => f.pageNumber === pageNumber).length}{" "}
-              fields)
+                fields)
           </span>
+            
+            </div>
           
           </div>
-        
-        </div>
-      </Col>
+        </Col>
+      )}
       
       <Col xs={24} className={"w-full"}>
         
@@ -605,7 +634,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                       setTimeout(() => document.body.removeChild(img), 0);
                     }}
                     style={{cursor: "grab", flex: 1}}
-                    size="large"
                   />
                 </div>
               </Col>
