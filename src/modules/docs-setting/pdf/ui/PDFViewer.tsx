@@ -7,7 +7,6 @@ import {DndContext, DragEndEvent} from "@dnd-kit/core";
 import {Button, Col, Input, Row} from "antd";
 import {LeftOutlined, RightOutlined} from "@ant-design/icons";
 
-// Setup PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
   import.meta.url
@@ -15,6 +14,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 
 interface PDFViewerProps {
   pdfFile: File | null;
+  setPageActive: (page: number) => void;
   formFields: FormField[];
   onAddField: (field: FormField) => void;
   onSelectField: (field: FormField | null) => void;
@@ -24,27 +24,27 @@ interface PDFViewerProps {
   onDeleteField: (fieldId: string) => void;
 }
 
-const PDFViewer: React.FC<PDFViewerProps> = ({
-                                               pdfFile,
-                                               formFields,
-                                               onAddField,
-                                               onSelectField,
-                                               selectedField,
-                                               onPDFLoad,
-                                               onUpdateField,
-                                               onDeleteField,
-                                             }) => {
+const PDFViewer: React.FC<PDFViewerProps> = (props) => {
+  const {
+    pdfFile,
+    formFields,
+    onAddField,
+    setPageActive,
+    onSelectField,
+    selectedField,
+    onPDFLoad,
+    onUpdateField,
+    onDeleteField,
+  } = props;
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [scale, _setScale] = useState<number>(1.0);
-  // add-by-drag: no click-to-add state needed
   const [snapToGrid, setSnapToGrid] = useState<boolean>(false);
   const [gridSize, setGridSize] = useState<number>(10);
   const [fieldCounter, setFieldCounter] = useState<number>(0);
   const [dragOverlapBehavior, setDragOverlapBehavior] = useState<'snap' | 'return'>('return');
   const [dragOverField, setDragOverField] = useState<string | null>(null);
   const pageRef = useRef<HTMLDivElement>(null);
-  // track active dragging via dnd-kit not required for functionality
   
   React.useEffect(() => {
     const wrappers = document.querySelectorAll('#pdf-page-thumbnails .pdf-thumbnail-wrapper');
@@ -424,6 +424,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         wrapper.classList.add('active');
         wrapper.scrollIntoView({behavior: 'smooth', inline: 'center'});
         setPageNumber(i);
+        setPageActive(i);
       });
       
       wrapper.appendChild(canvas);
@@ -442,7 +443,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         {isDragActive ? (
           <p>Drop the PDF file here...</p>
         ) : (
-          <div>
+          <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px'}}>
             <p>Drag & drop a PDF file here, or click to select</p>
             <Button
               type={'primary'}
@@ -596,7 +597,10 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
             <div className={'f-center h-full'}>
               <Button
                 type="primary" shape="circle" icon={<LeftOutlined/>}
-                onClick={() => setPageNumber(Math.max(1, pageNumber - 1))}
+                onClick={() => {
+                  setPageNumber(Math.max(1, pageNumber - 1))
+                  setPageActive(Math.max(1, pageNumber - 1));
+                }}
                 disabled={pageNumber <= 1}
               >
               </Button>
@@ -721,7 +725,10 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
             <div className={'f-center h-full'}>
               <Button
                 type="primary" shape="circle" icon={<RightOutlined/>}
-                onClick={() => setPageNumber(Math.min(numPages, pageNumber + 1))}
+                onClick={() => {
+                  setPageNumber(Math.min(numPages, pageNumber + 1))
+                  setPageActive(Math.min(numPages, pageNumber + 1))
+                }}
                 disabled={pageNumber >= numPages}
               >
               </Button>

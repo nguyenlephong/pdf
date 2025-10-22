@@ -8,6 +8,7 @@ import {AdvancedPDFService} from "./services/AdvancedPDFService";
 import {Col, Row} from 'antd';
 
 function PDFSettingPage(props: any) {
+  const [pageActive, setPageActive] = useState<number>(0);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [formFields, setFormFields] = useState<FormField[]>([]);
   const [selectedField, setSelectedField] = useState<FormField | null>(null);
@@ -82,6 +83,7 @@ function PDFSettingPage(props: any) {
             <div className="pdf-container">
               <PDFViewer
                 pdfFile={pdfFile}
+                setPageActive={setPageActive}
                 formFields={formFields}
                 onAddField={handleAddField}
                 onSelectField={handleSelectField}
@@ -93,11 +95,12 @@ function PDFSettingPage(props: any) {
             </div>
           </Col>
           <Col xs={24} xl={12} xxl={8}>
-            <div className="config-container">
+            <div className="pdf-config-container">
               <FormConfigPanel
                 selectedField={selectedField}
                 formFields={formFields}
                 pdfFile={pdfFile}
+                pageActive={pageActive}
                 onUpdateField={handleUpdateField}
                 onDeleteField={handleDeleteField}
                 onSelectField={handleSelectField}

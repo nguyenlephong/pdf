@@ -2,6 +2,7 @@
   text-align: center;
   display: flex;
   flex-direction: column;
+  padding: 24px;
 
 
   .pdf-page {
@@ -95,7 +96,32 @@
     }
   }
   
-  padding: 24px;
+  
+  .pdf_form-field-setting--item {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    
+    .pdf_form-field-label {
+      min-width: 64px;
+      text-align: left;
+
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+    }
+  }
+  
+  .pdf-config-container {
+    width: 100%;
+    padding: 0 12px;
+    
+    .pdf-config-panel {
+      h1 {
+        text-align: left;
+      }
+    }
+  }
 }
 
 .pdf-toolbox {

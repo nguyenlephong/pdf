@@ -1,10 +1,13 @@
 import React from 'react';
-import { FormField } from '../types/FormField';
-import { ConfigPDFService } from '../services/ConfigPDFService';
+import {FormField} from '../types/FormField';
+import {ConfigPDFService} from '../services/ConfigPDFService';
+import {Col, Row} from "antd";
+import FieldItemSetting from './form-field-setting.ui';
 
 interface FormConfigPanelProps {
   selectedField: FormField | null;
   formFields: FormField[];
+  pageActive: number;
   pdfFile: File | null;
   onUpdateField: (fieldId: string, updates: Partial<FormField>) => void;
   onDeleteField: (fieldId: string) => void;
@@ -17,6 +20,7 @@ const FormConfigPanel: React.FC<FormConfigPanelProps> = ({
   selectedField,
   formFields,
   pdfFile,
+  pageActive,
   onUpdateField,
   onDeleteField,
   onSelectField,
@@ -35,9 +39,21 @@ const FormConfigPanel: React.FC<FormConfigPanelProps> = ({
   };
 
   return (
-    <div className="config-panel">
+    <div className="pdf-config-panel">
+      <h1>Chọn vị trí và cấu hình điền</h1>
+      <Row gutter={[12, 12]}>
+        {formFields
+          .filter((field) => field.pageNumber === pageActive)
+          .map((field, ind) => {
+          return (
+            <Col xs={24} key={field.id}>
+              <FieldItemSetting data={field} pos={ind + 1} value={0} onChange={() => {}} />
+            </Col>
+          )
+        })}
+      </Row>
+
       <div className="config-section">
-        <h1>Chọn vị trí và cấu hình điền</h1>
         <h3>Form Fields ({formFields.length})</h3>
         
         {formFields.length === 0 ? (
@@ -45,20 +61,20 @@ const FormConfigPanel: React.FC<FormConfigPanelProps> = ({
         ) : (
           <div className="fields-list">
             {formFields.map(field => (
-              <div 
-                key={field.id} 
+              <div
+                key={field.id}
                 className={`field-item ${selectedField?.id === field.id ? 'selected' : ''}`}
                 onClick={() => onSelectField(field)}
               >
                 <strong>{field.label}</strong>
-                <br />
+                <br/>
                 <small>{field.name} ({field.type}) - Page {field.pageNumber}</small>
               </div>
             ))}
           </div>
         )}
       </div>
-
+      
       {selectedField && (
         <div className="config-section">
           <h3>Field Configuration</h3>
@@ -71,7 +87,7 @@ const FormConfigPanel: React.FC<FormConfigPanelProps> = ({
               onChange={(e) => handleFieldUpdate('label', e.target.value)}
             />
           </div>
-
+          
           <div className="form-group">
             <label>Field Name:</label>
             <input
@@ -80,7 +96,7 @@ const FormConfigPanel: React.FC<FormConfigPanelProps> = ({
               onChange={(e) => handleFieldUpdate('name', e.target.value)}
             />
           </div>
-
+          
           <div className="form-group">
             <label>Field Type:</label>
             <select
@@ -93,7 +109,7 @@ const FormConfigPanel: React.FC<FormConfigPanelProps> = ({
               <option value="email">Email</option>
             </select>
           </div>
-
+          
           <div className="form-group">
             <label>Placeholder:</label>
             <input
@@ -102,7 +118,7 @@ const FormConfigPanel: React.FC<FormConfigPanelProps> = ({
               onChange={(e) => handleFieldUpdate('placeholder', e.target.value)}
             />
           </div>
-
+          
           <div className="form-group">
             <label>Page Number:</label>
             <input
@@ -113,17 +129,17 @@ const FormConfigPanel: React.FC<FormConfigPanelProps> = ({
               max="999"
             />
           </div>
-
+          
           <div className="form-group">
             <label>Position & Size:</label>
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{display: 'flex', gap: '10px'}}>
               <div>
                 <label>X:</label>
                 <input
                   type="number"
                   value={Math.round(selectedField.x)}
                   onChange={(e) => handleFieldUpdate('x', parseInt(e.target.value))}
-                  style={{ width: '60px' }}
+                  style={{width: '60px'}}
                 />
               </div>
               <div>
@@ -132,7 +148,7 @@ const FormConfigPanel: React.FC<FormConfigPanelProps> = ({
                   type="number"
                   value={Math.round(selectedField.y)}
                   onChange={(e) => handleFieldUpdate('y', parseInt(e.target.value))}
-                  style={{ width: '60px' }}
+                  style={{width: '60px'}}
                 />
               </div>
               <div>
@@ -141,7 +157,7 @@ const FormConfigPanel: React.FC<FormConfigPanelProps> = ({
                   type="number"
                   value={Math.round(selectedField.width)}
                   onChange={(e) => handleFieldUpdate('width', parseInt(e.target.value))}
-                  style={{ width: '60px' }}
+                  style={{width: '60px'}}
                 />
               </div>
               <div>
@@ -150,12 +166,12 @@ const FormConfigPanel: React.FC<FormConfigPanelProps> = ({
                   type="number"
                   value={Math.round(selectedField.height)}
                   onChange={(e) => handleFieldUpdate('height', parseInt(e.target.value))}
-                  style={{ width: '60px' }}
+                  style={{width: '60px'}}
                 />
               </div>
             </div>
           </div>
-
+          
           <div className="form-group">
             <label>Font Size:</label>
             <input
@@ -166,7 +182,7 @@ const FormConfigPanel: React.FC<FormConfigPanelProps> = ({
               max="24"
             />
           </div>
-
+          
           <div className="form-group">
             <label>Text Color:</label>
             <input
@@ -175,7 +191,7 @@ const FormConfigPanel: React.FC<FormConfigPanelProps> = ({
               onChange={(e) => handleFieldUpdate('color', e.target.value)}
             />
           </div>
-
+          
           <div className="form-group">
             <label>
               <input
@@ -186,8 +202,8 @@ const FormConfigPanel: React.FC<FormConfigPanelProps> = ({
               Required Field
             </label>
           </div>
-
-          <button 
+          
+          <button
             className="button danger"
             onClick={handleDeleteSelected}
           >
@@ -195,11 +211,11 @@ const FormConfigPanel: React.FC<FormConfigPanelProps> = ({
           </button>
         </div>
       )}
-
+      
       <div className="config-section">
         <h3>PDF Actions</h3>
         
-        <button 
+        <button
           className="button success"
           onClick={async () => {
             if (!pdfFile || formFields.length === 0) {
@@ -220,154 +236,154 @@ const FormConfigPanel: React.FC<FormConfigPanelProps> = ({
         </button>
         
         
-          <button 
-            className="button"
-            onClick={() => {
-              const input = document.createElement('input');
-              input.type = 'file';
-              input.accept = '.pdf,.json';
-              input.multiple = true;
-              input.onchange = async (e) => {
-                const files = (e.target as HTMLInputElement).files;
-                if (!files || files.length < 1) {
-                  alert('Please select at least one file');
+        <button
+          className="button"
+          onClick={() => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.pdf,.json';
+            input.multiple = true;
+            input.onchange = async (e) => {
+              const files = (e.target as HTMLInputElement).files;
+              if (!files || files.length < 1) {
+                alert('Please select at least one file');
+                return;
+              }
+              
+              let pdfFile: File | null = null;
+              let configFile: File | null = null;
+              
+              // Identify PDF and JSON files
+              for (let i = 0; i < files.length; i++) {
+                if (files[i].type === 'application/pdf') {
+                  pdfFile = files[i];
+                } else if (files[i].type === 'application/json' || files[i].name.endsWith('.json')) {
+                  configFile = files[i];
+                }
+              }
+              
+              if (files.length === 1) {
+                // Single file selected
+                if (pdfFile) {
+                  alert('PDF file selected. Please also select a JSON config file, or create new form fields.');
+                  onLoadPDFWithConfig(pdfFile, []);
+                } else if (configFile) {
+                  alert('Config file selected. Please also select the corresponding PDF file.');
+                }
+              } else if (files.length === 2) {
+                // Both files selected
+                if (!pdfFile || !configFile) {
+                  alert('Please select one PDF file and one JSON config file');
                   return;
                 }
-
-                let pdfFile: File | null = null;
-                let configFile: File | null = null;
-
-                // Identify PDF and JSON files
-                for (let i = 0; i < files.length; i++) {
-                  if (files[i].type === 'application/pdf') {
-                    pdfFile = files[i];
-                  } else if (files[i].type === 'application/json' || files[i].name.endsWith('.json')) {
-                    configFile = files[i];
-                  }
-                }
-
-                if (files.length === 1) {
-                  // Single file selected
-                  if (pdfFile) {
-                    alert('PDF file selected. Please also select a JSON config file, or create new form fields.');
-                    onLoadPDFWithConfig(pdfFile, []);
-                  } else if (configFile) {
-                    alert('Config file selected. Please also select the corresponding PDF file.');
-                  }
-                } else if (files.length === 2) {
-                  // Both files selected
-                  if (!pdfFile || !configFile) {
-                    alert('Please select one PDF file and one JSON config file');
-                    return;
-                  }
-
-                  try {
-                    const { pdfFile: loadedPDF, formFields: loadedFields } = 
-                      await ConfigPDFService.importPDFWithConfig(pdfFile, configFile);
-                    onLoadPDFWithConfig(loadedPDF, loadedFields);
-                    alert(`Successfully loaded PDF with ${loadedFields.length} form fields`);
-                  } catch (error) {
-                    console.error('Import error:', error);
-                    alert('Error importing files');
-                  }
-                } else {
-                  alert('Please select maximum 2 files (one PDF and one JSON config)');
-                }
-              };
-              input.click();
-            }}
-          >
-            Import PDF + Config
-          </button>
-
-          <button 
-            className="button"
-            onClick={() => {
-              const input = document.createElement('input');
-              input.type = 'file';
-              input.accept = '.pdf';
-              input.onchange = async (e) => {
-                const files = (e.target as HTMLInputElement).files;
-                if (!files || files.length !== 1) {
-                  alert('Please select one PDF file');
-                  return;
-                }
-
-                const pdfFile = files[0];
-                if (pdfFile.type !== 'application/pdf') {
-                  alert('Please select a valid PDF file');
-                  return;
-                }
-
-                onLoadPDFWithConfig(pdfFile, []);
-                alert('PDF file loaded. You can now add form fields or import a config file.');
-              };
-              input.click();
-            }}
-          >
-            Import PDF Only
-          </button>
-
-          <button 
-            className="button"
-            onClick={() => {
-              const input = document.createElement('input');
-              input.type = 'file';
-              input.accept = '.json';
-              input.onchange = async (e) => {
-                const files = (e.target as HTMLInputElement).files;
-                if (!files || files.length !== 1) {
-                  alert('Please select one JSON config file');
-                  return;
-                }
-
-                const configFile = files[0];
-                if (!configFile.name.endsWith('.json') && configFile.type !== 'application/json') {
-                  alert('Please select a valid JSON config file');
-                  return;
-                }
-
-                // Read and parse config
+                
                 try {
-                  const configText = await configFile.text();
-                  const config = JSON.parse(configText);
-                  
-                  if (!config.formFields || !Array.isArray(config.formFields)) {
-                    alert('Invalid config format. Config must contain formFields array.');
-                    return;
-                  }
-
-                  // Validate and clean form fields
-                  const validatedFields = config.formFields.map((field: any) => ({
-                    id: field.id || `field_${Date.now()}_${Math.random()}`,
-                    type: field.type || 'text',
-                    label: field.label || 'Imported Field',
-                    name: field.name || `field_${Date.now()}`,
-                    x: field.x || 0,
-                    y: field.y || 0,
-                    width: field.width || 150,
-                    height: field.height || 30,
-                    fontSize: field.fontSize || 12,
-                    color: field.color || '#000000',
-                    required: field.required || false,
-                    placeholder: field.placeholder || '',
-                    pageNumber: field.pageNumber || 1
-                  }));
-
-                  onImportConfig(validatedFields);
-                  alert(`Successfully imported ${validatedFields.length} form fields from config. Please load the corresponding PDF file.`);
+                  const {pdfFile: loadedPDF, formFields: loadedFields} =
+                    await ConfigPDFService.importPDFWithConfig(pdfFile, configFile);
+                  onLoadPDFWithConfig(loadedPDF, loadedFields);
+                  alert(`Successfully loaded PDF with ${loadedFields.length} form fields`);
                 } catch (error) {
-                  console.error('Config import error:', error);
-                  alert('Error importing config file');
+                  console.error('Import error:', error);
+                  alert('Error importing files');
                 }
-              };
-              input.click();
-            }}
-          >
-            Import Config Only
-          </button>
+              } else {
+                alert('Please select maximum 2 files (one PDF and one JSON config)');
+              }
+            };
+            input.click();
+          }}
+        >
+          Import PDF + Config
+        </button>
         
-        {1 < 0 && <button 
+        <button
+          className="button"
+          onClick={() => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.pdf';
+            input.onchange = async (e) => {
+              const files = (e.target as HTMLInputElement).files;
+              if (!files || files.length !== 1) {
+                alert('Please select one PDF file');
+                return;
+              }
+              
+              const pdfFile = files[0];
+              if (pdfFile.type !== 'application/pdf') {
+                alert('Please select a valid PDF file');
+                return;
+              }
+              
+              onLoadPDFWithConfig(pdfFile, []);
+              alert('PDF file loaded. You can now add form fields or import a config file.');
+            };
+            input.click();
+          }}
+        >
+          Import PDF Only
+        </button>
+        
+        <button
+          className="button"
+          onClick={() => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = async (e) => {
+              const files = (e.target as HTMLInputElement).files;
+              if (!files || files.length !== 1) {
+                alert('Please select one JSON config file');
+                return;
+              }
+              
+              const configFile = files[0];
+              if (!configFile.name.endsWith('.json') && configFile.type !== 'application/json') {
+                alert('Please select a valid JSON config file');
+                return;
+              }
+              
+              // Read and parse config
+              try {
+                const configText = await configFile.text();
+                const config = JSON.parse(configText);
+                
+                if (!config.formFields || !Array.isArray(config.formFields)) {
+                  alert('Invalid config format. Config must contain formFields array.');
+                  return;
+                }
+                
+                // Validate and clean form fields
+                const validatedFields = config.formFields.map((field: any) => ({
+                  id: field.id || `field_${Date.now()}_${Math.random()}`,
+                  type: field.type || 'text',
+                  label: field.label || 'Imported Field',
+                  name: field.name || `field_${Date.now()}`,
+                  x: field.x || 0,
+                  y: field.y || 0,
+                  width: field.width || 150,
+                  height: field.height || 30,
+                  fontSize: field.fontSize || 12,
+                  color: field.color || '#000000',
+                  required: field.required || false,
+                  placeholder: field.placeholder || '',
+                  pageNumber: field.pageNumber || 1
+                }));
+                
+                onImportConfig(validatedFields);
+                alert(`Successfully imported ${validatedFields.length} form fields from config. Please load the corresponding PDF file.`);
+              } catch (error) {
+                console.error('Config import error:', error);
+                alert('Error importing config file');
+              }
+            };
+            input.click();
+          }}
+        >
+          Import Config Only
+        </button>
+        
+        {1 < 0 && <button
           className="button"
           onClick={() => {
             const input = document.createElement('input');
