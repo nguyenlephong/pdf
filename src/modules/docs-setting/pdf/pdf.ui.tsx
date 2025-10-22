@@ -1,10 +1,11 @@
 import React, {useState} from "react";
-import "./pdf.style.css";
+import "./pdf.style.scss";
 import PDFViewer from "./ui/PDFViewer";
 import FormConfigPanel from "./ui/FormConfigPanel";
 import PDFFiller from "./ui/PDFFiller";
 import {FormField} from "./types/FormField";
 import {AdvancedPDFService} from "./services/AdvancedPDFService";
+import {Col, Row} from 'antd';
 
 function PDFSettingPage(props: any) {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -75,44 +76,47 @@ function PDFSettingPage(props: any) {
   };
   
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>PDF Form Builder</h1>
-      </header>
-      <div className="main-container">
-        <div className="pdf-container">
-          <PDFViewer
-            pdfFile={pdfFile}
-            formFields={formFields}
-            onAddField={handleAddField}
-            onSelectField={handleSelectField}
-            selectedField={selectedField}
-            onPDFLoad={handlePDFLoad}
-            onUpdateField={handleUpdateField}
-            onDeleteField={handleDeleteField}
-          />
-        </div>
-        <div className="config-container">
-          <FormConfigPanel
-            selectedField={selectedField}
-            formFields={formFields}
-            pdfFile={pdfFile}
-            onUpdateField={handleUpdateField}
-            onDeleteField={handleDeleteField}
-            onSelectField={handleSelectField}
-            onImportConfig={handleImportConfig}
-            onLoadPDFWithConfig={handleLoadPDFWithConfig}
-          />
-          
-          <PDFFiller
-            pdfFile={pdfFile}
-            formFields={formFields}
-            onPDFGenerated={(pdfBytes) => {
-              console.log("PDF generated:", pdfBytes.length, "bytes");
-            }}
-          />
-        </div>
-      </div>
+    <div className="mfe-pdf-setting-page">
+        <Row className={"main-container"} gutter={24}>
+          <Col xs={24} xl={12} xxl={16}>
+            <div className="pdf-container">
+              <PDFViewer
+                pdfFile={pdfFile}
+                formFields={formFields}
+                onAddField={handleAddField}
+                onSelectField={handleSelectField}
+                selectedField={selectedField}
+                onPDFLoad={handlePDFLoad}
+                onUpdateField={handleUpdateField}
+                onDeleteField={handleDeleteField}
+              />
+            </div>
+          </Col>
+          <Col xs={24} xl={12} xxl={8}>
+            <div className="config-container">
+              <FormConfigPanel
+                selectedField={selectedField}
+                formFields={formFields}
+                pdfFile={pdfFile}
+                onUpdateField={handleUpdateField}
+                onDeleteField={handleDeleteField}
+                onSelectField={handleSelectField}
+                onImportConfig={handleImportConfig}
+                onLoadPDFWithConfig={handleLoadPDFWithConfig}
+              />
+              
+              <PDFFiller
+                pdfFile={pdfFile}
+                formFields={formFields}
+                onPDFGenerated={(pdfBytes) => {
+                  console.log("PDF generated:", pdfBytes.length, "bytes");
+                }}
+              />
+            </div>
+          </Col>
+        </Row>
+      
+      
     </div>
   );
 }

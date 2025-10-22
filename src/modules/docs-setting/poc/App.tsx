@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import "./App.css";
 import PDFViewer from "./components/PDFViewer";
 import FormConfigPanel from "./components/FormConfigPanel";
 import PDFFiller from "./components/PDFFiller";

@@ -15,7 +15,7 @@ export default function RootLayout() {
         <div style={{ padding: "1rem", color: "blue" }}>Loading…</div>
       )}
       
-      <main style={{ padding: "2rem" }}>
+      <main>
         <Outlet />
       </main>
     </div>

@@ -1,10 +1,147 @@
-.App {
+.mfe-pdf-setting-page {
   text-align: center;
-  height: 100vh;
   display: flex;
   flex-direction: column;
+
+
+  .pdf-page {
+    //box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #6155F5;
+    
+    position: relative;
+
+    //width: fit-content;
+
+    .pdf-controls {
+
+    }
+
+    .pdf-page-label-btn {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+    }
+  }
+
+  .pdf-pagination-section {
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .pdf-pagination-list {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 10px 0;
+    scroll-snap-type: x mandatory;
+    justify-content: center;
+
+    &::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #ccc;
+      border-radius: 3px;
+    }
+
+    .pdf-thumbnail-wrapper {
+      position: relative;
+      flex: 0 0 auto;
+      display: inline-block;
+      border-radius: 6px;
+      scroll-snap-align: center;
+
+      canvas {
+        width: 80px;
+        height: auto;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        box-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
+        z-index: 1;
+        position: relative;
+      }
+
+      /* Gray overlay */
+      &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        border-radius: 6px;
+        transition: opacity 0.25s ease;
+        pointer-events: none; // ✅ allow click on canvas
+        z-index: 2;
+      }
+
+      &:hover canvas {
+        transform: scale(1.03);
+        filter: brightness(0.7);
+      }
+
+      &.active {
+        canvas {
+          filter: brightness(1);
+          border: 2px solid #1677ff;
+          box-shadow: 0 0 5px rgba(22, 119, 255, 0.5);
+          transform: scale(1.05);
+        }
+
+        &::after {
+          opacity: 0; // remove overlay when active
+        }
+      }
+    }
+  }
+  
 }
 
+.pdf-toolbox {
+  padding: 12px 16px;
+  border-radius: 4px;
+  border: 1px solid #3C3C434A;
+
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+h3, p {
+  margin: 0;
+  padding: 0;
+}
+
+.pdf-t3 {
+  font-weight: bold;
+}
+
+.pdf-txt-body {
+
+}
+
+.t-left {
+  text-align: left;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.h-full {
+  height: 100%;
+}
+
+.pdf-mt-12 {
+  margin-top: 12px;
+}
+
+.f-center {
+  display: flex;
+  justify-content: center;
+  align-content: center;
+  align-items: center;
+}
 .App-header {
   background-color: #282c34;
   padding: 20px;
@@ -20,8 +157,6 @@
 
 .pdf-container {
   flex: 1;
-  background-color: #f5f5f5;
-  border-right: 2px solid #ddd;
   position: relative;
   overflow: hidden;
 }
@@ -57,25 +192,6 @@
   gap: 10px;
 }
 
-.pdf-page {
-  margin: 20px auto;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  position: relative;
-  background: white;
-}
-
-.adding-field-hint {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(0, 123, 255, 0.9);
-  color: white;
-  padding: 10px 20px;
-  border-radius: 5px;
-  font-weight: bold;
-  z-index: 1000;
-}
 
 .form-field-overlay {
   position: absolute;
