@@ -1,0 +1,35 @@
+export interface PDFSettingData {
+  form_fields: FormFieldSetting[];
+  name: string;
+  ts: string | number;
+  version: string;
+}
+
+export interface FormFieldSetting {
+  id: string
+  box: FormFieldBox
+  meta: FormFieldMeta
+  
+  font_size: number;
+  color: string;
+  position: number;
+  page_number: number;
+  
+  [key: string]: any;
+}
+
+type FormFieldMeta = {
+  label: string;
+  name: string;
+  required: boolean;
+  placeholder?: string;
+  ts: number;
+  type: string;
+}
+
+type FormFieldBox = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}

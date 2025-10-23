@@ -1,26 +1,19 @@
-import { FormField, PDFFormData } from '../types/FormField';
+import {FormFieldSetting, PDFSettingData} from "../types/pdf-setting.type";
 
-export interface PDFConfig {
-  pdfFileName: string;
-  formFields: FormField[];
-  timestamp: string;
-  version: string;
-}
-
-export class ConfigPDFService {
+export class PDFConfigService {
   /**
    * Export PDF file + JSON config separately
    */
   static async exportPDFWithConfig(
     pdfFile: File,
-    formFields: FormField[]
+    formFields: FormFieldSetting[]
   ): Promise<void> {
     try {
       // Create config object
-      const config: PDFConfig = {
-        pdfFileName: pdfFile.name,
-        formFields: formFields,
-        timestamp: new Date().toISOString(),
+      const config: PDFSettingData = {
+        name: pdfFile.name,
+        form_fields: formFields,
+        ts: new Date().toISOString(),
         version: '1.0'
       };
 
@@ -56,20 +49,19 @@ export class ConfigPDFService {
   static async importPDFWithConfig(
     pdfFile: File,
     configFile: File
-  ): Promise<{ pdfFile: File, formFields: FormField[] }> {
+  ): Promise<{ pdfFile: File, form_fields: FormFieldSetting[] }> {
     try {
       // Read config file
       const configText = await configFile.text();
-      const config: PDFConfig = JSON.parse(configText);
+      const config: PDFSettingData = JSON.parse(configText);
 
       // Validate config
-      if (!config.formFields || !Array.isArray(config.formFields)) {
+      if (!config.form_fields || !Array.isArray(config.form_fields)) {
         throw new Error('Invalid config format');
       }
 
       // Validate and clean form fields
-      const validatedFields = config.formFields.map((field: any) => ({
-        id: field.id || `field_${Date.now()}_${Math.random()}`,
+      const validatedFields = config.form_fields.map((field: any) => ({
         type: field.type || 'text',
         label: field.label || 'Imported Field',
         name: field.name || `field_${Date.now()}`,
@@ -77,16 +69,33 @@ export class ConfigPDFService {
         y: field.y || 0,
         width: field.width || 150,
         height: field.height || 30,
-        fontSize: field.fontSize || 12,
-        color: field.color || '#000000',
         required: field.required || false,
         placeholder: field.placeholder || '',
-        pageNumber: field.pageNumber || 1
+        page_number: field.pageNumber || 1,
+        
+        id: field.id || `field_${Date.now()}_${Math.random()}`,
+        font_size: field.fontSize || 12,
+        color: field.color || '#000000',
+        position: field.position || 1,
+        box: {
+          x: field.x || 0,
+          y: field.y || 0,
+          width: field.width || 150,
+          height: field.height || 30,
+        },
+        meta: {
+          type: field.type || 'text',
+          label: field.label || 'Imported Field',
+          name: field.name || `field_${Date.now()}`,
+          required: field.required || false,
+          placeholder: field.placeholder || '',
+          ts: field.ts || Date.now()
+        }
       }));
 
       return {
         pdfFile,
-        formFields: validatedFields
+        form_fields: validatedFields
       };
     } catch (error) {
       console.error('Error importing PDF with config:', error);
@@ -100,35 +109,41 @@ export class ConfigPDFService {
   static async loadPDFWithConfig(
     pdfFile: File,
     configText: string
-  ): Promise<{ pdfFile: File, formFields: FormField[] }> {
+  ): Promise<{ pdfFile: File, form_fields: FormFieldSetting[] }> {
     try {
-      const config: PDFConfig = JSON.parse(configText);
+      const config: PDFSettingData = JSON.parse(configText);
 
       // Validate config
-      if (!config.formFields || !Array.isArray(config.formFields)) {
+      if (!config.form_fields || !Array.isArray(config.form_fields)) {
         throw new Error('Invalid config format');
       }
 
       // Validate and clean form fields
-      const validatedFields = config.formFields.map((field: any) => ({
+      const validatedFields = config.form_fields.map((field: any) => ({
         id: field.id || `field_${Date.now()}_${Math.random()}`,
-        type: field.type || 'text',
-        label: field.label || 'Imported Field',
-        name: field.name || `field_${Date.now()}`,
-        x: field.x || 0,
-        y: field.y || 0,
-        width: field.width || 150,
-        height: field.height || 30,
-        fontSize: field.fontSize || 12,
+        font_size: field.fontSize || 12,
         color: field.color || '#000000',
-        required: field.required || false,
-        placeholder: field.placeholder || '',
-        pageNumber: field.pageNumber || 1
+        position: field.position || 1,
+        box: {
+          x: field.x || 0,
+          y: field.y || 0,
+          width: field.width || 150,
+          height: field.height || 30,
+        },
+        meta: {
+          type: field.type || 'text',
+          label: field.label || 'Imported Field',
+          name: field.name || `field_${Date.now()}`,
+          required: field.required || false,
+          placeholder: field.placeholder || '',
+          ts: field.ts || Date.now()
+        },
+        page_number: field.pageNumber || 1,
       }));
 
       return {
         pdfFile,
-        formFields: validatedFields
+        form_fields: validatedFields
       };
     } catch (error) {
       console.error('Error loading PDF with config:', error);
@@ -136,31 +151,4 @@ export class ConfigPDFService {
     }
   }
 
-  /**
-   * Create sample form data for testing
-   */
-  static createSampleFormData(formFields: FormField[]): PDFFormData {
-    const sampleData: PDFFormData = {};
-    
-    formFields.forEach(field => {
-      switch (field.type) {
-        case 'text':
-          sampleData[field.name] = `Sample ${field.label}`;
-          break;
-        case 'date':
-          sampleData[field.name] = '2024-01-01';
-          break;
-        case 'number':
-          sampleData[field.name] = '12345';
-          break;
-        case 'email':
-          sampleData[field.name] = 'sample@example.com';
-          break;
-        default:
-          sampleData[field.name] = `Sample ${field.label}`;
-      }
-    });
-    
-    return sampleData;
-  }
 }

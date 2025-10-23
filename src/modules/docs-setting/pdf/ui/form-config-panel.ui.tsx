@@ -1,22 +1,22 @@
 import React from 'react';
-import {FormField} from '../types/FormField';
-import {ConfigPDFService} from '../services/ConfigPDFService';
+import {FormFieldSetting} from '../types/pdf-setting.type';
+import {PDFConfigService} from '../services/config-pdf.service';
 import {Button, Col, Row} from "antd";
 import FieldItemSetting from './form-field-setting.ui';
 
 interface FormConfigPanelProps {
-  selectedField: FormField | null;
-  formFields: FormField[];
+  selectedField: FormFieldSetting | null;
+  formFields: FormFieldSetting[];
   pageActive: number;
   pdfFile: File | null;
-  onUpdateField: (fieldId: string, updates: Partial<FormField>) => void;
+  onUpdateField: (fieldId: string, updates: Partial<FormFieldSetting>) => void;
   onDeleteField: (fieldId: string) => void;
-  onSelectField: (field: FormField) => void;
-  onImportConfig: (fields: FormField[]) => void;
-  onLoadPDFWithConfig: (pdfFile: File, formFields: FormField[]) => void;
+  onSelectField: (field: FormFieldSetting) => void;
+  onImportConfig: (fields: FormFieldSetting[]) => void;
+  onLoadPDFWithConfig: (pdfFile: File, formFields: FormFieldSetting[]) => void;
 }
 
-const FormConfigPanel: React.FC<FormConfigPanelProps> = (props) => {
+const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
   const {
     selectedField,
     formFields,
@@ -46,11 +46,11 @@ const FormConfigPanel: React.FC<FormConfigPanelProps> = (props) => {
       <h1>Chọn vị trí và cấu hình điền</h1>
       <Row gutter={[12, 12]}>
         {formFields
-          .sort((x, y) => x.ts - y.ts)
+          .sort((x, y) => x.meta.ts - y.meta.ts)
           .map((x, ind) => {
-            return {...x, position: ind + 1};
+            return {...x, position: x.position || ind + 1};
           })
-          .filter((field) => field.pageNumber === pageActive)
+          .filter((field) => field.page_number === pageActive)
           .map((field, ind) => {
           return (
             <Col xs={24} key={field.id}>
@@ -71,7 +71,7 @@ const FormConfigPanel: React.FC<FormConfigPanelProps> = (props) => {
               return;
             }
             try {
-              await ConfigPDFService.exportPDFWithConfig(pdfFile, formFields);
+              await PDFConfigService.exportPDFWithConfig(pdfFile, formFields);
               console.log('PDF and config files exported successfully!');
             } catch (error) {
               console.error('Export error:', error);
@@ -126,8 +126,8 @@ const FormConfigPanel: React.FC<FormConfigPanelProps> = (props) => {
                 }
                 
                 try {
-                  const {pdfFile: loadedPDF, formFields: loadedFields} =
-                    await ConfigPDFService.importPDFWithConfig(pdfFile, configFile);
+                  const {pdfFile: loadedPDF, form_fields: loadedFields} =
+                    await PDFConfigService.importPDFWithConfig(pdfFile, configFile);
                   onLoadPDFWithConfig(loadedPDF, loadedFields);
                   console.log(`Successfully loaded PDF with ${loadedFields.length} form fields`);
                 } catch (error) {
@@ -208,4 +208,4 @@ const FormConfigPanel: React.FC<FormConfigPanelProps> = (props) => {
   );
 };
 
-export default FormConfigPanel;
+export default FormConfigPanelUi;

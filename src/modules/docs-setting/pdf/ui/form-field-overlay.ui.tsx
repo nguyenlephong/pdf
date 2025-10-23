@@ -1,10 +1,10 @@
 import React, {useCallback, useMemo, useRef, useState} from "react";
 import {useDraggable} from "@dnd-kit/core";
 import {Resizable} from 're-resizable';
-import {FormField} from "../types/FormField";
+import {FormFieldSetting} from "../types/pdf-setting.type";
 
 interface FormFieldOverlayProps {
-  field: FormField;
+  field: FormFieldSetting;
   scale: number;
   isSelected: boolean;
   isDragOver?: boolean;
@@ -12,13 +12,13 @@ interface FormFieldOverlayProps {
   onMove: (newX: number, newY: number) => void;
   onResize: (newWidth: number, newHeight: number) => void;
   onDelete: (event: React.MouseEvent) => void;
-  allFields: FormField[];
+  allFields: FormFieldSetting[];
   snapToGrid: boolean;
   gridSize: number;
   position: number;
 }
 
-const FormFieldOverlay: React.FC<FormFieldOverlayProps> = (props) => {
+const FormFieldOverlayUi: React.FC<FormFieldOverlayProps> = (props) => {
   const {
     field,
     scale,
@@ -47,8 +47,8 @@ const FormFieldOverlay: React.FC<FormFieldOverlayProps> = (props) => {
   const isResizingRef = useRef(false);
 
   // Get current size (local state if resizing, otherwise from field)
-  const currentWidth = localSize?.width ?? field.width;
-  const currentHeight = localSize?.height ?? field.height;
+  const currentWidth = localSize?.width ?? field.box.width;
+  const currentHeight = localSize?.height ?? field.box.height;
 
   // Check if resize would cause overlap with other fields
   const checkResizeOverlap = useCallback(
@@ -56,27 +56,29 @@ const FormFieldOverlay: React.FC<FormFieldOverlayProps> = (props) => {
       return allFields.some((otherField) => {
         if (
           otherField.id === field.id ||
-          otherField.pageNumber !== field.pageNumber
+          otherField.page_number !== field.page_number
         ) {
           return false;
         }
 
         // Check for ANY overlap - even partial overlap is not allowed
+        const box = field.box;
+        const otherBox = otherField.box;
         const hasOverlap = !(
-          field.x >= otherField.x + otherField.width ||
-          field.x + width <= otherField.x ||
-          field.y >= otherField.y + otherField.height ||
-          field.y + height <= otherField.y
+          box.x >= otherBox.x + otherBox.width ||
+          box.x + width <= otherBox.x ||
+          box.y >= otherBox.y + otherBox.height ||
+          box.y + height <= otherBox.y
         );
 
         if (hasOverlap) {
           console.log(`Resize would overlap with field ${otherField.id}:`, {
-            current: { x: field.x, y: field.y, width, height },
+            current: { x: box.x, y: box.y, width, height },
             other: {
-              x: otherField.x,
-              y: otherField.y,
-              width: otherField.width,
-              height: otherField.height,
+              x: otherBox.x,
+              y: otherBox.y,
+              width: otherBox.width,
+              height: otherBox.height,
             },
           });
         }
@@ -84,26 +86,25 @@ const FormFieldOverlay: React.FC<FormFieldOverlayProps> = (props) => {
         return hasOverlap;
       });
     },
-    [allFields, field.pageNumber, field.id, field.x, field.y]
+    [allFields, field.page_number, field.id, field.box.x, field.box.y]
   );
 
   const handleResizeStart = useCallback(() => {
-    console.log("Resize start");
     isResizingRef.current = true;
     // Initialize local size from field
-    setLocalSize({ width: field.width, height: field.height });
-  }, [field.width, field.height]);
+    setLocalSize({ width: field.box.width, height: field.box.height });
+  }, [field.box.width, field.box.height]);
 
   // Handle resize - update local state only
   const handleResize = useCallback(
     (
-      event: MouseEvent | TouchEvent,
-      direction: string,
-      refToElement: HTMLElement,
+      _event: MouseEvent | TouchEvent,
+      _direction: string,
+      _refToElement: HTMLElement,
       delta: { width: number; height: number }
     ) => {
-      const newWidth = field.width + delta.width / scale;
-      const newHeight = field.height + delta.height / scale;
+      const newWidth = field.box.width + delta.width / scale;
+      const newHeight = field.box.height + delta.height / scale;
 
       console.log("Resizing:", { newWidth, newHeight, delta });
 
@@ -114,18 +115,12 @@ const FormFieldOverlay: React.FC<FormFieldOverlayProps> = (props) => {
         console.log("Cannot resize - would cause overlap");
       }
     },
-    [field.width, field.height, scale, checkResizeOverlap]
+    [field.box.width, field.box.height, scale, checkResizeOverlap]
   );
 
   // Handle resize stop - commit to parent
   const handleResizeStop = useCallback(
-    (
-      event: MouseEvent | TouchEvent,
-      direction: string,
-      refToElement: HTMLElement,
-      delta: { width: number; height: number }
-    ) => {
-      console.log("Resize stop");
+    () => {
       isResizingRef.current = false;
 
       if (localSize) {
@@ -147,33 +142,43 @@ const FormFieldOverlay: React.FC<FormFieldOverlayProps> = (props) => {
   const containerStyle: React.CSSProperties = useMemo(
     () => ({
       position: "absolute",
-      left: `${field.x * scale}px`,
-      top: `${field.y * scale}px`,
+      left: `${field.box.x * scale}px`,
+      top: `${field.box.y * scale}px`,
       zIndex: isSelected ? 1000 : 100,
       transform:
         !isResizingRef.current && transform
           ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
           : undefined,
     }),
-    [field.x, field.y, scale, isSelected, transform]
+    [field.box.x, field.box.y, scale, isSelected, transform]
   );
 
   const resizableStyle: React.CSSProperties = useMemo(
     () => ({
-      border: isSelected ? "2px solid #2196F3" : "1px solid #999",
+      border: isSelected ? "2px solid #FF383C" : "1px solid #0088FF",
       backgroundColor: isDragOver
         ? "rgba(255, 193, 7, 0.3)"
         : "rgba(33, 150, 243, 0.1)",
       boxSizing: "border-box",
       display: "flex",
       alignItems: "flex-start",
-      padding: "2px",
+      maxHeight: 24
     }),
     [isSelected, isDragOver]
   );
 
   const handleStyles = useMemo(
     () => ({
+      right: {
+        width: 5,
+        height: 5,
+        right: "-4.5px",
+        top: 10,
+        cursor: "ew-resize",
+        backgroundColor: isSelected ? "#2196F3" : "transparent",
+        border: isSelected ? "1px solid #2196F3" : "none",
+        borderRadius: 5
+      },
       bottomRight: {
         width: "6px",
         height: "6px",
@@ -188,6 +193,20 @@ const FormFieldOverlay: React.FC<FormFieldOverlayProps> = (props) => {
     [isSelected]
   );
 
+  const enableResize = isSelected
+    ? {
+      top: false,
+      right: true,
+      bottom: false,
+      left: false,
+      topRight: false,
+      bottomRight: false,
+      bottomLeft: false,
+      topLeft: false,
+    }
+    : false
+  
+  
   return (
     <div
       ref={setNodeRef}
@@ -201,20 +220,7 @@ const FormFieldOverlay: React.FC<FormFieldOverlayProps> = (props) => {
         }}
         minWidth={50 * scale}
         minHeight={20 * scale}
-        enable={
-          isSelected
-            ? {
-                top: false,
-                right: false,
-                bottom: false,
-                left: false,
-                topRight: false,
-                bottomRight: true,
-                bottomLeft: false,
-                topLeft: false,
-              }
-            : false
-        }
+        enable={enableResize}
         onResizeStart={handleResizeStart}
         onResize={handleResize}
         onResizeStop={handleResizeStop}
@@ -231,23 +237,12 @@ const FormFieldOverlay: React.FC<FormFieldOverlayProps> = (props) => {
             cursor: "move",
             position: "relative",
           }}
+          className={'f-end'}
         >
-          {/* Field label */}
-          <div
-            style={{
-              fontSize: `${Math.max(8, field.fontSize * scale * 0.8)}px`,
-              color: field.color,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              pointerEvents: "none",
-              userSelect: "none",
-            }}
-          >
-            {field.label}
+          <div className={'pdf__txt-field--position'}>
+            {field.position}
           </div>
 
-          {/* Delete button */}
           {isSelected && (
             <button
               onClick={(e) => {
@@ -261,8 +256,8 @@ const FormFieldOverlay: React.FC<FormFieldOverlayProps> = (props) => {
                 position: "absolute",
                 top: "-10px",
                 right: "-10px",
-                width: "20px",
-                height: "20px",
+                width: "16px",
+                height: "16px",
                 borderRadius: "50%",
                 backgroundColor: "#f44336",
                 color: "white",
@@ -284,4 +279,5 @@ const FormFieldOverlay: React.FC<FormFieldOverlayProps> = (props) => {
   );
 };
 
-export default React.memo(FormFieldOverlay);
+const FormFieldWithMemo = React.memo(FormFieldOverlayUi);
+export default FormFieldWithMemo;

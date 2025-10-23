@@ -1,41 +1,67 @@
 import React, {useState} from "react";
 import "./pdf.style.scss";
-import PDFViewer from "./ui/PDFViewer";
-import FormConfigPanel from "./ui/FormConfigPanel";
+import PDFViewer from "./ui/pdf-viewer.ui";
+import FormConfigPanel from "./ui/form-config-panel.ui";
 import PDFFiller from "./ui/PDFFiller";
-import {FormField} from "./types/FormField";
-import {AdvancedPDFService} from "./services/AdvancedPDFService";
+import {PDFSettingData, FormFieldSetting} from "./types/pdf-setting.type";
+import {PDFSettingService} from "./services/pdf-setting.service";
 import {Col, Row} from 'antd';
 
-function PDFSettingPage(props: any) {
+interface IProps {
+  pdfUrl?: string; // CDN URL or local file path
+  settingData?: PDFSettingData;
+  onSaveSetting: (data: PDFSettingData) => void;
+}
+
+function PDFSettingPage(props: IProps) {
+  const {pdfUrl} = props;
   const [pageActive, setPageActive] = useState<number>(0);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
-  const [formFields, setFormFields] = useState<FormField[]>([]);
-  const [selectedField, setSelectedField] = useState<FormField | null>(null);
+  const [formFields, setFormFields] = useState<FormFieldSetting[]>([]);
+  const [selectedField, setSelectedField] = useState<FormFieldSetting | null>(null);
   
   React.useEffect(() => {
     console.log("PDF Docs Setting App received props:", props);
   }, [props]);
   
-  const handlePDFLoad = async (file: File) => {
-    setPdfFile(file);
-    setFormFields([]);
-    setSelectedField(null);
-    
-    // Try to extract existing form fields from PDF
+  React.useEffect(() => {
+    if (pdfUrl) handlePDFLoad(pdfUrl);
+  }, [pdfUrl]);
+  
+  const handlePDFLoad = async (input: File | string) => {
     try {
-      const existingFields = await AdvancedPDFService.extractFormFields(file);
+      setPdfFile(null);
+      setFormFields([]);
+      setSelectedField(null);
+      
+      let pdfData: ArrayBuffer;
+      
+      // ✅ If input is a CDN URL
+      if (typeof input === "string") {
+        const response = await fetch(input);
+        if (!response.ok) throw new Error(`Failed to load PDF from URL: ${input}`);
+        pdfData = await response.arrayBuffer();
+        setPdfFile({name: input.split('/').pop() || "remote.pdf", url: input} as any);
+      }
+      // ✅ If input is a local File
+      else {
+        pdfData = await input.arrayBuffer();
+        setPdfFile(input);
+      }
+      
+      // Extract form fields (if any)
+      const existingFields = await PDFSettingService.extractFormFields(pdfData);
       if (existingFields.length > 0) {
         setFormFields(existingFields);
       }
     } catch (error) {
-      console.log("No existing form fields found or error extracting:", error);
+      console.error("Error loading or extracting PDF:", error);
     }
   };
   
-  const handleAddField = (field: FormField) => {
+  const handleAddField = (field: FormFieldSetting) => {
     const dataFields = [...formFields, field]
-      .sort((x, y) => x.ts - y.ts)
+      .sort((x, y) => x.meta?.ts - y.meta?.ts)
       .map((x, ind) => {
         return {...x, position: ind + 1};
       });
@@ -43,7 +69,7 @@ function PDFSettingPage(props: any) {
     setFormFields(dataFields);
   };
   
-  const handleUpdateField = (fieldId: string, updates: Partial<FormField>) => {
+  const handleUpdateField = (fieldId: string, updates: Partial<FormFieldSetting>) => {
     setFormFields(
       formFields.map((field) =>
         field.id === fieldId ? {...field, ...updates} : field
@@ -56,7 +82,6 @@ function PDFSettingPage(props: any) {
   };
   
   const handleDeleteField = (fieldId: string) => {
-    console.log("handleDeleteField", fieldId);
     const fieldAfterDelete = formFields.filter((field) => field.id !== fieldId);
     setFormFields(fieldAfterDelete);
     if (selectedField?.id === fieldId) {
@@ -64,18 +89,18 @@ function PDFSettingPage(props: any) {
     }
   };
   
-  const handleSelectField = (field: FormField | null) => {
+  const handleSelectField = (field: FormFieldSetting | null) => {
     setSelectedField(field);
   };
   
-  const handleImportConfig = (fields: FormField[]) => {
+  const handleImportConfig = (fields: FormFieldSetting[]) => {
     setFormFields(fields);
     setSelectedField(null);
   };
   
   const handleLoadPDFWithConfig = (
     loadedPDF: File,
-    loadedFields: FormField[]
+    loadedFields: FormFieldSetting[]
   ) => {
     setPdfFile(loadedPDF);
     setFormFields(loadedFields);

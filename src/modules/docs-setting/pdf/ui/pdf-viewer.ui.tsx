@@ -1,8 +1,8 @@
 import React, {useCallback, useRef, useState} from "react";
 import {Document, Page, pdfjs} from "react-pdf";
 import {useDropzone} from "react-dropzone";
-import {FormField} from "../types/FormField";
-import FormFieldOverlay from "./FormFieldOverlay";
+import {FormFieldSetting} from "../types/pdf-setting.type";
+import FormFieldOverlay from "./form-field-overlay.ui";
 import {DndContext, DragEndEvent} from "@dnd-kit/core";
 import {Button, Col, Input, Row} from "antd";
 import {LeftOutlined, RightOutlined} from "@ant-design/icons";
@@ -15,16 +15,16 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 interface PDFViewerProps {
   pdfFile: File | null;
   setPageActive: (page: number) => void;
-  formFields: FormField[];
-  onAddField: (field: FormField) => void;
-  onSelectField: (field: FormField | null) => void;
-  selectedField: FormField | null;
+  formFields: FormFieldSetting[];
+  onAddField: (field: FormFieldSetting) => void;
+  onSelectField: (field: FormFieldSetting | null) => void;
+  selectedField: FormFieldSetting | null;
   onPDFLoad: (file: File) => void;
-  onUpdateField: (fieldId: string, updates: Partial<FormField>) => void;
+  onUpdateField: (fieldId: string, updates: Partial<FormFieldSetting>) => void;
   onDeleteField: (fieldId: string) => void;
 }
 
-const PDFViewer: React.FC<PDFViewerProps> = (props) => {
+const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
   const {
     pdfFile,
     formFields,
@@ -41,7 +41,7 @@ const PDFViewer: React.FC<PDFViewerProps> = (props) => {
   const [scale, _setScale] = useState<number>(1.0);
   const [snapToGrid, setSnapToGrid] = useState<boolean>(false);
   const [gridSize, setGridSize] = useState<number>(10);
-  const [fieldCounter, setFieldCounter] = useState<number>(0);
+  const [_fieldCounter, setFieldCounter] = useState<number>(0);
   const [dragOverlapBehavior, setDragOverlapBehavior] = useState<'snap' | 'return'>('return');
   const [dragOverField, setDragOverField] = useState<string | null>(null);
   const pageRef = useRef<HTMLDivElement>(null);
@@ -72,8 +72,8 @@ const PDFViewer: React.FC<PDFViewerProps> = (props) => {
       const field = formFields.find((f) => f.id === event.active.id);
       if (field) {
         const fieldScale = event.active.data.current?.scale || scale;
-        const newX = field.x + event.delta.x / fieldScale;
-        const newY = field.y + event.delta.y / fieldScale;
+        const newX = field.box.x + event.delta.x / fieldScale;
+        const newY = field.box.y + event.delta.y / fieldScale;
         
         const overlappedFieldId = getFieldUnderDrag(newX, newY, field.id);
         setDragOverField(overlappedFieldId);
@@ -91,8 +91,8 @@ const PDFViewer: React.FC<PDFViewerProps> = (props) => {
       const fieldSnapToGrid = fieldData.snapToGrid;
       const fieldGridSize = fieldData.gridSize;
       
-      let newX = field.x + delta.x / fieldScale;
-      let newY = field.y + delta.y / fieldScale;
+      let newX = field.box.x + delta.x / fieldScale;
+      let newY = field.box.y + delta.y / fieldScale;
       
       // Apply snap to grid if needed
       if (fieldSnapToGrid) {
@@ -108,8 +108,8 @@ const PDFViewer: React.FC<PDFViewerProps> = (props) => {
       const hasOverlap = checkForOverlap(
         newX,
         newY,
-        field.width,
-        field.height,
+        field.box.width,
+        field.box.height,
         field.id
       );
       
@@ -121,8 +121,8 @@ const PDFViewer: React.FC<PDFViewerProps> = (props) => {
           const {x: finalX, y: finalY} = findNonOverlappingPosition(
             newX,
             newY,
-            field.width,
-            field.height
+            field.box.width,
+            field.box.height
           );
           onUpdateField(field.id, {x: finalX, y: finalY});
           console.log("Field snapped to avoid overlap");
@@ -146,15 +146,15 @@ const PDFViewer: React.FC<PDFViewerProps> = (props) => {
       const currentField = {x, y, width: 0, height: 0, pageNumber};
       
       for (const field of formFields) {
-        if (field.id === excludeFieldId || field.pageNumber !== pageNumber) {
+        if (field.id === excludeFieldId || field.page_number !== pageNumber) {
           continue;
         }
         
         const isOverlapping = !(
-          currentField.x >= field.x + field.width ||
-          currentField.x + currentField.width <= field.x ||
-          currentField.y >= field.y + field.height ||
-          currentField.y + currentField.height <= field.y
+          currentField.x >= field.box.x + field.box.width ||
+          currentField.x + currentField.width <= field.box.x ||
+          currentField.y >= field.box.y + field.box.height ||
+          currentField.y + currentField.height <= field.box.y
         );
         
         if (isOverlapping) {
@@ -178,15 +178,15 @@ const PDFViewer: React.FC<PDFViewerProps> = (props) => {
       const currentField = {x, y, width, height, pageNumber};
       
       return formFields.some((field) => {
-        if (field.id === excludeFieldId || field.pageNumber !== pageNumber) {
+        if (field.id === excludeFieldId || field.page_number !== pageNumber) {
           return false;
         }
         
         return !(
-          currentField.x >= field.x + field.width ||
-          currentField.x + currentField.width <= field.x ||
-          currentField.y >= field.y + field.height ||
-          currentField.y + currentField.height <= field.y
+          currentField.x >= field.box.x + field.box.width ||
+          currentField.x + currentField.width <= field.box.x ||
+          currentField.y >= field.box.y + field.box.height ||
+          currentField.y + currentField.height <= field.box.y
         );
       });
     },
@@ -302,34 +302,42 @@ const PDFViewer: React.FC<PDFViewerProps> = (props) => {
     );
     
     // Narrow allowed types
-    const allowedTypes: Array<FormField['type']> = ["text", "date", "number", "email"];
-    const fieldType: FormField['type'] = (allowedTypes.includes(rawType as any)
-      ? (rawType as FormField['type'])
+    const allowedTypes: Array<FormFieldSetting['type']> = ["text", "date", "number", "email"];
+    const fieldType: FormFieldSetting['type'] = (allowedTypes.includes(rawType as any)
+      ? (rawType as FormFieldSetting['type'])
       : "text");
     
-    const newField: FormField = {
+    const newField: FormFieldSetting = {
       id: `field_${Date.now()}`,
-      ts: Date.now(),
-      type: fieldType,
-      label: `Field ${fieldCounter}`,
-      name: `field_${fieldCounter}`,
-      x: finalX,
-      y: finalY,
-      width: baseWidth,
-      height: baseHeight,
-      fontSize: 12,
+      font_size: 16,
       color: "#000000",
-      required: false,
-      placeholder: "Enter text...",
-      pageNumber: pageNumber,
-      position: -1
+      
+      box: {
+        
+        x: finalX,
+        y: finalY,
+        width: baseWidth,
+        height: baseHeight,
+      },
+      meta: {
+        type: fieldType,
+        label: "",
+        name: "",
+        required: false,
+        placeholder: "",
+        ts: Date.now(),
+      },
+      
+      position: -1,
+      
+      page_number: pageNumber,
     };
     
     onAddField(newField);
     setFieldCounter((prev) => prev + 1);
   };
   
-  const handleFieldSelect = (field: FormField, event?: React.MouseEvent) => {
+  const handleFieldSelect = (field: FormFieldSetting, event?: React.MouseEvent) => {
     if (event) {
       event.stopPropagation();
     }
@@ -346,8 +354,8 @@ const PDFViewer: React.FC<PDFViewerProps> = (props) => {
     
     // Check for overlap at new size
     const hasOverlap = checkForOverlap(
-      field.x,
-      field.y,
+      field.box.x,
+      field.box.y,
       newWidth,
       newHeight,
       fieldId
@@ -369,8 +377,8 @@ const PDFViewer: React.FC<PDFViewerProps> = (props) => {
     const hasOverlap = checkForOverlap(
       newX,
       newY,
-      field.width,
-      field.height,
+      field.box.width,
+      field.box.height,
       fieldId
     );
     
@@ -396,7 +404,13 @@ const PDFViewer: React.FC<PDFViewerProps> = (props) => {
     if (!container) return;
     container.innerHTML = '';
     
-    const url = URL.createObjectURL(file);
+    let url = null;
+    try {
+      url = URL.createObjectURL(file)
+    } catch (e) {
+      // @ts-ignore
+      url = file?.['url']! || '';
+    }
     const pdf = await pdfjs.getDocument(url).promise;
     
     const scale = 0.2;
@@ -581,7 +595,7 @@ const PDFViewer: React.FC<PDFViewerProps> = (props) => {
             Page {pageNumber} of {numPages}
           </span>
               <span style={{marginLeft: "10px", fontSize: "12px", color: "#666"}}>
-            ({formFields.filter((f) => f.pageNumber === pageNumber).length}{" "}
+            ({formFields.filter((f) => f.page_number === pageNumber).length}{" "}
                 fields)
           </span>
             
@@ -640,6 +654,7 @@ const PDFViewer: React.FC<PDFViewerProps> = (props) => {
                       setTimeout(() => document.body.removeChild(img), 0);
                     }}
                     style={{cursor: "grab", flex: 1}}
+                    size={'small'}
                   />
                 </div>
               </Col>
@@ -692,7 +707,7 @@ const PDFViewer: React.FC<PDFViewerProps> = (props) => {
                     )}
                     
                     {formFields
-                      .filter((field) => field.pageNumber === pageNumber)
+                      .filter((field) => field.page_number === pageNumber)
                       .map((field) => (
                         <FormFieldOverlay
                           key={field.id}
@@ -747,4 +762,4 @@ const PDFViewer: React.FC<PDFViewerProps> = (props) => {
   );
 };
 
-export default PDFViewer;
+export default PdfViewerUi;

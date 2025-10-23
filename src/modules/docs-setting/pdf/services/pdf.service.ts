@@ -1,5 +1,6 @@
-import { PDFDocument, PDFForm, PDFTextField, rgb } from 'pdf-lib';
-import { FormField, PDFFormData } from '../types/FormField';
+import { PDFDocument, PDFTextField, rgb } from 'pdf-lib';
+import { PDFFormData } from '../types/form-field.type';
+import {FormFieldSetting} from "../types/pdf-setting.type";
 
 export class PDFService {
   /**
@@ -7,7 +8,7 @@ export class PDFService {
    */
   static async generatePDFWithForm(
     originalPdfFile: File,
-    formFields: FormField[]
+    formFields: FormFieldSetting[]
   ): Promise<Uint8Array> {
     try {
       // Load the original PDF
@@ -112,7 +113,7 @@ export class PDFService {
   /**
    * Extract form field information from an existing PDF
    */
-  static async extractFormFields(pdfFile: File): Promise<FormField[]> {
+  static async extractFormFields(pdfFile: File): Promise<FormFieldSetting[]> {
     try {
       const existingPdfBytes = await pdfFile.arrayBuffer();
       const pdfDoc = await PDFDocument.load(existingPdfBytes);
@@ -120,7 +121,7 @@ export class PDFService {
       const form = pdfDoc.getForm();
       const fields = form.getFields();
       
-      const extractedFields: FormField[] = [];
+      const extractedFields: FormFieldSetting[] = [];
       
       fields.forEach(field => {
         if (field instanceof PDFTextField) {
@@ -129,18 +130,25 @@ export class PDFService {
           
           extractedFields.push({
             id: `extracted_${field.getName()}`,
-            type: 'text', // Default type, could be enhanced
-            label: field.getName(),
-            name: field.getName(),
-            x: 0, // Would need to extract from appearance
-            y: 0, // Would need to extract from appearance
-            width: 150, // Default width
-            height: 30, // Default height
-            fontSize: 12,
-            color: '#000000',
-            required: false,
-            pageNumber: 1,
+            box: {
+              x: 0,
+              y: 0,
+              width: 150,
+              height: 24,
+            },
+            meta: {
+              type: 'text',
+              label: field.getName(),
+              name: field.getName(),
+              required: false,
+              ts: Date.now()
             // placeholder: field?.getPlaceholder() || ''
+            },
+            page_number: 1,
+            font_size: 12,
+            color: '#000000',
+            position: 1,
+            
           });
         }
       });
@@ -168,25 +176,25 @@ export class PDFService {
   /**
    * Create sample form data for testing
    */
-  static createSampleFormData(formFields: FormField[]): PDFFormData {
+  static createSampleFormData(formFields: FormFieldSetting[]): PDFFormData {
     const sampleData: PDFFormData = {};
     
     formFields.forEach(field => {
-      switch (field.type) {
+      switch (field.meta.type) {
         case 'text':
-          sampleData[field.name] = `Sample ${field.label}`;
+          sampleData[field.meta.name] = `Sample ${field.label}`;
           break;
         case 'date':
-          sampleData[field.name] = '2024-01-01';
+          sampleData[field.meta.name] = '2024-01-01';
           break;
         case 'number':
-          sampleData[field.name] = '12345';
+          sampleData[field.meta.name] = '12345';
           break;
         case 'email':
-          sampleData[field.name] = 'sample@example.com';
+          sampleData[field.meta.name] = 'sample@example.com';
           break;
         default:
-          sampleData[field.name] = `Sample ${field.label}`;
+          sampleData[field.meta.name] = `Sample ${field.label}`;
       }
     });
     

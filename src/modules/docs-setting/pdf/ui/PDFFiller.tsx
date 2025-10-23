@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { FormField, PDFFormData } from '../types/FormField';
-import { AdvancedPDFService } from '../services/AdvancedPDFService';
-import { PDFService } from '../services/PDFService';
+import React, {useState} from 'react';
+import {PDFFormData} from '../types/form-field.type';
+import {PDFSettingService} from "../services/pdf-setting.service";
+import {PDFService} from '../services/pdf.service';
+import {FormFieldSetting} from "../types/pdf-setting.type";
 
 interface PDFFillerProps {
   pdfFile: File | null;
-  formFields: FormField[];
+  formFields: FormFieldSetting[];
   onPDFGenerated: (pdfBytes: Uint8Array) => void;
 }
 
@@ -26,7 +27,7 @@ const PDFFiller: React.FC<PDFFillerProps> = ({
   };
 
   const loadSampleData = () => {
-    const sampleData = AdvancedPDFService.createSampleFormData(formFields);
+    const sampleData = PDFSettingService.createSampleFormData(formFields);
     setFormData(sampleData);
   };
 
@@ -39,27 +40,27 @@ const PDFFiller: React.FC<PDFFillerProps> = ({
     setIsLoading(true);
     try {
       // First generate PDF with form fields
-      const pdfWithForm = await AdvancedPDFService.generatePDFWithForm(pdfFile, formFields);
+      const pdfWithForm = await PDFSettingService.generatePDFWithForm(pdfFile, formFields);
       
       let filledPdf: Uint8Array;
       
       if (flattenForm) {
         // Fill the form with data and flatten (remove borders)
-        filledPdf = await AdvancedPDFService.fillAndFlattenPDFForm(
+        filledPdf = await PDFSettingService.fillAndFlattenPDFForm(
           new File([new Uint8Array(pdfWithForm)], 'form.pdf', { type: 'application/pdf' }),
           formData,
           formFields // Pass formFields to get page information
         );
       } else {
         // Fill the form with data but keep borders
-        filledPdf = await AdvancedPDFService.fillPDFForm(
+        filledPdf = await PDFSettingService.fillPDFForm(
           new File([new Uint8Array(pdfWithForm)], 'form.pdf', { type: 'application/pdf' }),
           formData
         );
       }
       
       onPDFGenerated(filledPdf);
-      AdvancedPDFService.downloadPDF(filledPdf, 'filled-form.pdf');
+      PDFSettingService.downloadPDF(filledPdf, 'filled-form.pdf');
     } catch (error) {
       console.error('Error generating filled PDF:', error);
       alert('Error generating PDF. Please check the console for details.');
@@ -68,6 +69,7 @@ const PDFFiller: React.FC<PDFFillerProps> = ({
     }
   };
 
+  //@ts-ignore
   const downloadFormPDF = async () => {
     if (!pdfFile || formFields.length === 0) {
       alert('Please load a PDF and add form fields first');

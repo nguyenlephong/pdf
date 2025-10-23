@@ -1,13 +1,14 @@
-import { PDFDocument, PDFForm, PDFTextField, rgb, StandardFonts } from 'pdf-lib';
-import { FormField, PDFFormData } from '../types/FormField';
+import {PDFDocument, PDFTextField, rgb, StandardFonts} from 'pdf-lib';
+import {PDFFormData} from '../types/form-field.type';
+import {FormFieldSetting} from "../types/pdf-setting.type";
 
-export class AdvancedPDFService {
+export class PDFSettingService {
   /**
    * Generate a new PDF with actual form fields from the original PDF
    */
   static async generatePDFWithForm(
     originalPdfFile: File,
-    formFields: FormField[]
+    formFields: FormFieldSetting[]
   ): Promise<Uint8Array> {
     try {
       // Load the original PDF
@@ -24,7 +25,7 @@ export class AdvancedPDFService {
       });
 
       // Get fonts
-      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      // const _font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
       // Add new form fields
       const pages = pdfDoc.getPages();
@@ -35,20 +36,20 @@ export class AdvancedPDFService {
         const page = pages[pageIndex]; 
         
         // Create text field
-        const textField = form.createTextField(field.name);
+        const textField = form.createTextField(field.meta.name);
         
         // Set field properties
-        textField.setText(field.placeholder || '');
+        textField.setText(field.meta.placeholder || '');
         
         // Add the field to the page with proper positioning
         const pageHeight = page.getHeight();
         textField.addToPage(page, {
-          x: field.x,
-          y: pageHeight - field.y - field.height, // PDF coordinates are from bottom
-          width: field.width,
-          height: field.height,
+          x: field.box.x,
+          y: pageHeight - field.box.y - field.box.height,
+          width: field.box.width,
+          height: field.box.height,
           borderColor: rgb(0, 0, 0),
-          backgroundColor: rgb(1, 1, 1), // White background
+          backgroundColor: rgb(1, 1, 1),
           borderWidth: 1,
         });
 
@@ -119,7 +120,7 @@ export class AdvancedPDFService {
   static async fillAndFlattenPDFForm(
     pdfFile: File,
     formData: PDFFormData,
-    formFields?: FormField[] // Add original form fields to get page info
+    formFields?: FormFieldSetting[]
   ): Promise<Uint8Array> {
     try {
       // Load the PDF
@@ -145,7 +146,7 @@ export class AdvancedPDFService {
       const fieldPageMap = new Map<string, number>();
       if (formFields) {
         formFields.forEach(field => {
-          fieldPageMap.set(field.name, field.pageNumber);
+          fieldPageMap.set(field.meta.name, field.page_number);
         });
       }
 
@@ -222,54 +223,65 @@ export class AdvancedPDFService {
       throw error;
     }
   }
-
+  
   /**
    * Extract form field information from an existing PDF
    */
-  static async extractFormFields(pdfFile: File): Promise<FormField[]> {
+  static async extractFormFields(pdfInput: File | ArrayBuffer): Promise<FormFieldSetting[]> {
     try {
-      const existingPdfBytes = await pdfFile.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(existingPdfBytes);
+      let pdfBytes: ArrayBuffer;
       
+      // Handle both File and ArrayBuffer input types
+      if (pdfInput instanceof File) {
+        pdfBytes = await pdfInput.arrayBuffer();
+      } else if (pdfInput instanceof ArrayBuffer) {
+        pdfBytes = pdfInput;
+      } else {
+        throw new Error("Invalid input type. Expected File or ArrayBuffer.");
+      }
+      
+      const pdfDoc = await PDFDocument.load(pdfBytes);
       const form = pdfDoc.getForm();
       const fields = form.getFields();
       
-      const extractedFields: FormField[] = [];
+      const extractedFields: FormFieldSetting[] = [];
       
-      fields.forEach(field => {
+      fields.forEach((field, ind) => {
         if (field instanceof PDFTextField) {
-          // Get field appearance to extract position and size
-          // const appearance = field.getDefaultAppearance();
+          const fieldPages = (field as any).getPages?.();
+          const pageNumber = fieldPages?.length > 0 ? fieldPages[0].getIndex() + 1 : 1;
           
-            // Try to determine which page this field is on
-            const fieldPages = (field as any).getPages();
-            const pageNumber = fieldPages.length > 0 ? fieldPages[0].getIndex() + 1 : 1;
-            
-            extractedFields.push({
-              id: `extracted_${field.getName()}`,
-              type: 'text', // Default type, could be enhanced
+          extractedFields.push({
+            ts: Date.now(),
+            id: `extracted_${field.getName()}`,
+            box: {
+              x: 0,
+              y: 0,
+              width: 150,
+              height: 24,
+            },
+            meta: {
               label: field.getName(),
               name: field.getName(),
-              x: 0, // Would need to extract from appearance
-              y: 0, // Would need to extract from appearance
-              width: 150, // Default width
-              height: 30, // Default height
-              fontSize: 12,
-              color: '#000000',
               required: false,
-              pageNumber: pageNumber,
-              // placeholder: field.getPlaceholder() || ''
-            });
+              ts: Date.now(),
+              type: "text",
+            },
+            font_size: 12,
+            color: "#000000",
+            page_number: pageNumber,
+            position: ind + 1
+          });
         }
       });
       
       return extractedFields;
     } catch (error) {
-      console.error('Error extracting form fields:', error);
+      console.error("Error extracting form fields:", error);
       throw error;
     }
   }
-
+  
   /**
    * Download PDF as file
    */
@@ -286,25 +298,25 @@ export class AdvancedPDFService {
   /**
    * Create sample form data for testing
    */
-  static createSampleFormData(formFields: FormField[]): PDFFormData {
+  static createSampleFormData(formFields: FormFieldSetting[]): PDFFormData {
     const sampleData: PDFFormData = {};
     
     formFields.forEach(field => {
       switch (field.type) {
         case 'text':
-          sampleData[field.name] = `Sample ${field.label}`;
+          sampleData[field.meta.name] = `Sample ${field.label}`;
           break;
         case 'date':
-          sampleData[field.name] = '2024-01-01';
+          sampleData[field.meta.name] = '2024-01-01';
           break;
         case 'number':
-          sampleData[field.name] = '12345';
+          sampleData[field.meta.name] = '12345';
           break;
         case 'email':
-          sampleData[field.name] = 'sample@example.com';
+          sampleData[field.meta.name] = 'sample@example.com';
           break;
         default:
-          sampleData[field.name] = `Sample ${field.label}`;
+          sampleData[field.meta.name] = `Sample ${field.label}`;
       }
     });
     

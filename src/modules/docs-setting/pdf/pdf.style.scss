@@ -122,6 +122,19 @@
       }
     }
   }
+  
+  .pdf__txt-field--position {
+    font-weight: bold;
+    color: #0088FF;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+    user-select: none;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+  }
 }
 
 .pdf-toolbox {
@@ -132,6 +145,7 @@
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 h3, p {
@@ -166,6 +180,12 @@ h3, p {
 .f-center {
   display: flex;
   justify-content: center;
+  align-content: center;
+  align-items: center;
+}
+.f-end {
+  display: flex;
+  justify-content: flex-end;
   align-content: center;
   align-items: center;
 }
