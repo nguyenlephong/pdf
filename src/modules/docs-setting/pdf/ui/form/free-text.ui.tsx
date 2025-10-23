@@ -1,15 +1,5 @@
-import React, { useEffect, useState } from "react";
-import {
-  Box,
-  Divider,
-  FormControlLabel,
-  FormLabel,
-  Grid,
-  Radio,
-  RadioGroup,
-  TextField,
-  Button,
-} from "@mui/material";
+import React, {useEffect, useState} from "react";
+import {Box, Divider, FormControlLabel, FormLabel, Grid, Radio, RadioGroup, TextField,} from "@mui/material";
 
 type AnswerType = "min" | "max" | "exact" | "confirm";
 type ConfirmType = "email" | "phone" | "date" | "number";
@@ -49,7 +39,7 @@ const normalizeDataToForm = (data?: Partial<SavePayload> | null): FormState => (
   maxValue: data?.max_value?.toString?.() ?? "",
 });
 
-const FreeTextForm: React.FC<ItemConfProps> = ({ data, onSaveSetting }) => {
+const FreeTextForm: React.FC<ItemConfProps> = React.forwardRef(({ data, onSaveSetting }, ref) => {
   // @ts-ignore
   const [form, setForm] = useState<FormState>(() => normalizeDataToForm(data?.setting || null));
   // Error state theo field
@@ -74,7 +64,7 @@ const FreeTextForm: React.FC<ItemConfProps> = ({ data, onSaveSetting }) => {
   
   // Helpers
   const updateForm = (patch: Partial<FormState>) => {
-    setForm((prev) => ({ ...prev, ...patch }));
+    setForm((prev) => ({...prev, ...patch}));
   };
   
   const clearFieldError = (name: keyof FormState) => {
@@ -85,8 +75,7 @@ const FreeTextForm: React.FC<ItemConfProps> = ({ data, onSaveSetting }) => {
     });
   };
   
-  const handleInputChange =
-    (name: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (name: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement>) => {
       updateForm({ [name]: e.target.value } as Partial<FormState>);
       clearFieldError(name);
     };
@@ -111,19 +100,19 @@ const FreeTextForm: React.FC<ItemConfProps> = ({ data, onSaveSetting }) => {
     const errs: Record<string, string> = {};
     
     // validate title
-    if (!f.title.trim()) errs.title = "Vui lòng nhập tiêu đề";
+    if (!f?.title?.trim()) errs.title = "Vui lòng nhập tiêu đề";
     else if (f.title.length > 400) errs.title = "Tựa đề không được vượt quá 400 ký tự";
     
     // validate theo answerType
-    if (f.answerType === "min") {
+    if (f?.answerType === "min") {
       if (!checkPositive(f.minChar)) errs.minChar = "Vui lòng nhập số ký tự tối thiểu";
     }
     
-    if (f.answerType === "max") {
+    if (f?.answerType === "max") {
       if (!checkPositive(f.maxChar)) errs.maxChar = "Vui lòng nhập số ký tự tối đa";
     }
     
-    if (f.answerType === "exact") {
+    if (f?.answerType === "exact") {
       const numMin = parseInt(f.minChar, 10);
       const numMax = parseInt(f.maxChar, 10);
       
@@ -147,12 +136,12 @@ const FreeTextForm: React.FC<ItemConfProps> = ({ data, onSaveSetting }) => {
     return errs;
   };
   
-  const handleSave = () => {
-    const errs = validate(form);
+  const handleSave = (dataForm: FormState) => {
+    const errs = validate(dataForm);
     setErrors(errs);
     
     if (Object.keys(errs).length === 0) {
-      onSaveSetting({
+      const dataSaving = {
         title: form.title,
         answer_type: form.answerType,
         min_char: form.minChar,
@@ -160,22 +149,22 @@ const FreeTextForm: React.FC<ItemConfProps> = ({ data, onSaveSetting }) => {
         confirm_type: form.confirmType,
         min_value: form.minValue,
         max_value: form.maxValue,
-      });
+      }
+      onSaveSetting(dataSaving);
+      return dataSaving;
     }
+    
+    return -1;
   };
+  
+  React.useImperativeHandle(ref, () => ({
+    save: () => handleSave(form),
+  }));
   
   const { title, answerType, minChar, maxChar, confirmType, minValue, maxValue } = form;
 
   return (
-    <Box
-      sx={{
-        border: "1px solid #0088FF",
-        borderRadius: 2,
-        p: 2,
-        mx: "auto",
-        textAlign: "left",
-      }}
-    >
+    <Box sx={{textAlign: "left", width: '100%'}}>
       <TextField
         fullWidth
         variant="outlined"
@@ -304,14 +293,8 @@ const FreeTextForm: React.FC<ItemConfProps> = ({ data, onSaveSetting }) => {
           )}
         </Box>
       )}
-      
-      <Box sx={{ mt: 3 }}>
-        <Button variant="contained" color="primary" onClick={handleSave}>
-          Lưu
-        </Button>
-      </Box>
     </Box>
   );
-};
+});
 
 export default FreeTextForm;

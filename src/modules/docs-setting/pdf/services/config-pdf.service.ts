@@ -24,6 +24,30 @@ export class PDFConfigService {
     }
   };
   
+  static async exportConfig(formFields: FormFieldSetting[]) {
+    try {
+      const config: PDFSettingData = {
+        name: "config.json",
+        form_fields: formFields,
+        ts: new Date().toISOString(),
+        version: '1.0'
+      };
+      
+      // Download JSON config file
+      const configBlob = new Blob([JSON.stringify(config, null, 2)], {
+        type: 'application/json'
+      });
+      const configUrl = URL.createObjectURL(configBlob);
+      const configLink = document.createElement('a');
+      configLink.href = configUrl;
+      configLink.download = "config.json";
+      configLink.click();
+      URL.revokeObjectURL(configUrl);
+      
+    } catch (e) {
+      
+    }
+  }
   /**
    * Export PDF file + JSON config separately
    */

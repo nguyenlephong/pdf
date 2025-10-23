@@ -25,27 +25,41 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
     pdfFile,
     pageActive,
     onUpdateField,
-    onDeleteField,
-    // onSelectField,
     onImportConfig,
     onLoadPDFWithConfig
   } = props;
+  
+  const childRefs = React.useRef<Record<string, { save: () => any }>>({});
+  
   // @ts-ignore
   const handleFieldUpdate = (field: FormFieldSetting, value: any) => {
     if (!field) return;
     onUpdateField(field.id, {...value});
   };
-
-  // @ts-ignore
-  const _handleDeleteSelected = () => {
-    if (selectedField) {
-      onDeleteField(selectedField.id);
+  
+  const handleSaveAll = async () => {
+    const results = Object.entries(childRefs.current).map(([id, ref]) => ({
+      id,
+      data: ref?.save(),
+    }));
+    
+    const isErr = results.some((res) => res.data === -1);
+    if (isErr) {
+      console.log("❌ Please fix errors in form fields before saving.");
+      return;
     }
+    console.log("✅ Parent collected all:", results);
+    
+    await PDFConfigService.exportConfig(formFields);
   };
-
+  
+  
   return (
     <div className="pdf-config-panel">
-      <h1>Chọn vị trí và cấu hình điền</h1>
+      <div className={'f-between'}>
+        <h1>Chọn vị trí và cấu hình điền</h1>
+        <Button onClick={handleSaveAll}>Save</Button>
+      </div>
       <Row gutter={[12, 12]}>
         {formFields
           .sort((x, y) => x.meta.ts - y.meta.ts)
@@ -57,8 +71,11 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
           return (
             <Col xs={24} key={field.id}>
               <FieldItemSettingUI
+                /*@ts-ignore*/
+                ref={(r) => (childRefs.current[field.id] = r)}
                 attributes={attributes}
-                data={field} 
+                data={field}
+                selectedField={selectedField}
                 onChange={(v) => handleFieldUpdate(field, v)} />
             </Col>
           )
@@ -86,6 +103,23 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
           disabled={formFields.length === 0 || !pdfFile}
         >
           Export PDF + Config
+        </Button>
+        
+        <Button
+          className="button success"
+          onClick={async () => {
+            if (formFields.length === 0) {
+              console.log('Please load a PDF and add form fields first');
+              return;
+            }
+            try {
+              await PDFConfigService.exportConfig(formFields);
+            } catch (error) {
+            }
+          }}
+          disabled={formFields.length === 0}
+        >
+          Export Config
         </Button>
         
         

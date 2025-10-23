@@ -5,11 +5,12 @@ import Select, {SelectChangeEvent} from '@mui/material/Select';
 import FreeTextForm from "./form/free-text.ui";
 import DropdownForm from "./form/dropdown.ui";
 import React from "react";
-import {Col, Row} from "antd";
 import {CustomerAttributeData, FormFieldSetting} from "../types/pdf-setting.type";
+import {Box, Grid} from "@mui/material";
 
 type IProps = {
   data: FormFieldSetting;
+  selectedField: FormFieldSetting | null;
   attributes?: CustomerAttributeData[];
   onChange: (v: FormFieldSetting) => void;
 }
@@ -61,10 +62,11 @@ const FIELD_OPTS = [
   }
 ];
 
-const FormFieldSettingUI = (props: IProps) => {
-  const {data, onChange, attributes} = props;
+const FormFieldSettingUI = React.forwardRef((props: IProps, ref) => {
+  const {data, onChange, attributes, selectedField} = props;
   
   const [field, setField] = React.useState<any>({...props.data});
+  const optRef = React.useRef<{ save: () => any }>(null);
   
   const [opt, setOpt] = React.useState<string>(props.data?.setting?.type || 'free_text');
   const [fieldOpts, setFieldOpts] = React.useState<OptionData[]>([]);
@@ -79,6 +81,14 @@ const FormFieldSettingUI = (props: IProps) => {
     });
     setFieldOpts(optInit);
   }, [attributes])
+  
+  React.useImperativeHandle(ref, () => ({
+    save: () => {
+      const data = optRef.current?.save();
+      console.log("📨 ChildForm forwarded save:", data);
+      return data
+    },
+  }));
   
   const handleSaveSetting = (type: string, settingData: any) => {
     const newField: FormFieldSetting = {
@@ -104,17 +114,22 @@ const FormFieldSettingUI = (props: IProps) => {
     };
     onChange(fieldUpdate);
   };
-
   
   const fieldId = data.id;
+  const styleBox = {
+    borderRadius: '4px',
+    border: `1px solid ${selectedField?.id === fieldId ? "#0088FF" : "#3C3C434A"}`,
+    padding: '12px 8px'
+  }
   return (
-    <Row gutter={[12, 12]}>
-      <Col xs={24}>
+    <Box sx={['free_text', 'dropdown_select'].includes(opt) ? styleBox : {}}>
+      <Grid container rowSpacing={2}>
+        <Grid size={12}>
         <div className={"pdf_form-field-setting--item"}>
           <div className={"pdf_form-field-label"}>
             <p>Vị trí {data.position}</p>
           </div>
-          <FormControl sx={{m: 1, width: '100%', textAlign: 'left'}} size="small">
+          <FormControl sx={{width: '100%', textAlign: 'left'}} size="small">
             <InputLabel id={"pdf-select-field-" + fieldId}>Loại thông tin*</InputLabel>
             <Select
               labelId={"pdf-select-field-" + fieldId}
@@ -124,41 +139,45 @@ const FormFieldSettingUI = (props: IProps) => {
               label="Loại thông tin*"
               onChange={onFieldChange}
             >
-              <MenuItem value={'free_text'}>
+              <MenuItem key={'free_text_' + fieldId} value={'free_text'}>
                 <em>Free text</em>
               </MenuItem>
               {fieldOpts.map((item: OptionData) => (
-                <MenuItem key={item.value} value={item.value}>{item.label}</MenuItem>
+                <MenuItem key={item.value + fieldId} value={item.value}>{item.label}</MenuItem>
               ))}
             </Select>
           </FormControl>
         </div>
-      </Col>
+        </Grid>
       
       {opt === 'free_text' && (
-        <Col xs={24}>
+        <Grid size={12}>
           <div className={"f-start"}>
-            <FreeTextForm 
+            <FreeTextForm
+              /*@ts-ignore*/
+              ref={(r) => (optRef.current = r)}
               data={field} 
               onSaveSetting={(d) => handleSaveSetting('free_text', d)}
             />
           </div>
-        </Col>
+        </Grid>
       )}
       
       {opt === 'dropdown_select' && (
-        <Col xs={24}>
+        <Grid size={12}>
           <div className={"f-start"}>
-            <DropdownForm 
+            <DropdownForm
+              /*@ts-ignore*/
+              ref={(r) => (optRef.current = r)}
               data={field} 
               onSaveSetting={(d) => handleSaveSetting('dropdown_select', d)}
             />
           </div>
-        </Col>
+        </Grid>
       )}
-    </Row>
-  
+      </Grid>
+    </Box>
   );
-};
+});
 
 export default FormFieldSettingUI;

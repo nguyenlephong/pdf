@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {Box, Button, IconButton, TextField, Typography} from "@mui/material";
+import {Box, IconButton, TextField, Typography} from "@mui/material";
 import {AddCircleOutlineOutlined, RemoveCircleOutlineOutlined} from "@mui/icons-material";
 
 type SavePayload = {
@@ -28,7 +28,7 @@ const normalizeDataToForm = (data?: Partial<SavePayload> | null): FormState => (
     : ["", ""],
 });
 
-const DropdownForm: React.FC<DropdownFormProps> = ({data, onSaveSetting}) => {
+const DropdownForm: React.FC<DropdownFormProps> = React.forwardRef(({data, onSaveSetting}, ref) => {
   //@ts-ignore
   const [form, setForm] = useState<FormState>(() => normalizeDataToForm(data?.setting || null));
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -85,11 +85,11 @@ const DropdownForm: React.FC<DropdownFormProps> = ({data, onSaveSetting}) => {
   const validate = (f: FormState) => {
     const errs: Record<string, string> = {};
     
-    if (!f.title.trim()) errs.title = "Vui lòng nhập tiêu đề";
-    else if (f.title.length > 400) errs.title = "Tựa đề không được vượt quá 400 ký tự";
+    if (!f?.title?.trim()) errs.title = "Vui lòng nhập tiêu đề";
+    else if (f.title?.length > 400) errs.title = "Tựa đề không được vượt quá 400 ký tự";
     
     f.options.forEach((opt, idx) => {
-      if (!opt.trim()) errs[`option_${idx}`] = "Vui lòng nhập đáp án";
+      if (!opt?.trim()) errs[`option_${idx}`] = "Vui lòng nhập đáp án";
       else if (opt.length > 255)
         errs[`option_${idx}`] = "Đáp án không được vượt quá 255 ký tự";
     });
@@ -100,29 +100,28 @@ const DropdownForm: React.FC<DropdownFormProps> = ({data, onSaveSetting}) => {
     return errs;
   };
   
-  const handleSave = () => {
-    const errs = validate(form);
+  const handleSave = (formData: FormState) => {
+    const errs = validate(formData);
     setErrors(errs);
     
     if (Object.keys(errs).length === 0) {
-      onSaveSetting({
-        title: form.title,
-        options: form.options,
-      });
+      const dataSaving = {
+        title: formData.title,
+        options: formData.options,
+      }
+      onSaveSetting(dataSaving);
+      return dataSaving;
     }
+    
+    return -1;
   };
   
+  React.useImperativeHandle(ref, () => ({
+    save: () => handleSave(form),
+  }));
+  
   return (
-    <Box
-      sx={{
-        border: "1px solid #0088FF",
-        borderRadius: 2,
-        p: 2,
-        mx: "auto",
-        textAlign: "left",
-        width: "100%",
-      }}
-    >
+    <Box sx={{textAlign: "left", width: "100%",}}>
       <TextField
         fullWidth
         variant="outlined"
@@ -182,17 +181,9 @@ const DropdownForm: React.FC<DropdownFormProps> = ({data, onSaveSetting}) => {
             />
           </Box>
         ))}
-      
-      
-      </Box>
-      
-      <Box sx={{mt: 3}}>
-        <Button variant="contained" color="primary" onClick={handleSave}>
-          Lưu
-        </Button>
       </Box>
     </Box>
   );
-};
+});
 
 export default DropdownForm;
