@@ -20,7 +20,7 @@ interface PDFViewerProps {
   onSelectField: (field: FormFieldSetting | null) => void;
   selectedField: FormFieldSetting | null;
   onPDFLoad: (file: File) => void;
-  onUpdateField: (fieldId: string, updates: Partial<FormFieldBox>) => void;
+  onUpdateBoxField: (fieldId: string, updates: Partial<FormFieldBox>) => void;
   onDeleteField: (fieldId: string) => void;
 }
 
@@ -33,7 +33,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
     onSelectField,
     selectedField,
     onPDFLoad,
-    onUpdateField,
+    onUpdateBoxField,
     onDeleteField,
   } = props;
   const [numPages, setNumPages] = useState<number>(0);
@@ -113,7 +113,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
       );
       
       if (!hasOverlap) {
-        onUpdateField(field.id, {x: newX, y: newY});
+        onUpdateBoxField(field.id, {x: newX, y: newY});
       } else {
         if (dragOverlapBehavior === 'snap') {
           // Find a non-overlapping position near the target
@@ -123,7 +123,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
             field.box.width,
             field.box.height
           );
-          onUpdateField(field.id, {x: finalX, y: finalY});
+          onUpdateBoxField(field.id, {x: finalX, y: finalY});
           console.log("Field snapped to avoid overlap");
         } else {
           // Return to original position
@@ -362,7 +362,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
     
     // Only update if there's no overlap
     if (!hasOverlap) {
-      onUpdateField(fieldId, {width: newWidth, height: newHeight});
+      onUpdateBoxField(fieldId, {width: newWidth, height: newHeight});
     } else {
       console.log("Cannot resize field - would cause overlap");
     }
@@ -383,7 +383,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
     
     // Only update if there's no overlap
     if (!hasOverlap) {
-      onUpdateField(fieldId, {x: newX, y: newY});
+      onUpdateBoxField(fieldId, {x: newX, y: newY});
     }
   };
   

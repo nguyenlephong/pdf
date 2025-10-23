@@ -2,10 +2,22 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react({
+    babel: {
+      plugins: ['@emotion'],
+    },
+  })],
   define: {
     'process.env.NODE_ENV': '"production"',
-    'process.env': {}, // fallback tránh lỗi "process is not defined"
+    'process.env': {},
+  },
+  css: {
+    preprocessorOptions: {
+      less: {
+        javascriptEnabled: true,
+      },
+    },
+    devSourcemap: true,
   },
   build: {
     lib: {

@@ -16,6 +16,13 @@ export interface FormFieldSetting {
   page_number: number;
   
   [key: string]: any;
+  
+  setting?: SettingType;
+}
+
+type SettingType = {
+  type: string;
+  [key: string]: any;
 }
 
 type FormFieldMeta = {

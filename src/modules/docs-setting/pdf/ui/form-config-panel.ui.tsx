@@ -1,15 +1,15 @@
 import React from 'react';
-import {FormFieldBox, FormFieldSetting} from '../types/pdf-setting.type';
+import {FormFieldSetting} from '../types/pdf-setting.type';
 import {PDFConfigService} from '../services/config-pdf.service';
 import {Button, Col, Row} from "antd";
-import FieldItemSetting from './form-field-setting.ui';
+import FieldItemSettingUI from './form-field-setting.ui';
 
 interface FormConfigPanelProps {
   selectedField: FormFieldSetting | null;
   formFields: FormFieldSetting[];
   pageActive: number;
   pdfFile: File | null;
-  onUpdateField: (fieldId: string, updates: Partial<FormFieldBox>) => void;
+  onUpdateField: (fieldId: string, updates: Partial<FormFieldSetting>) => void;
   onDeleteField: (fieldId: string) => void;
   onSelectField: (field: FormFieldSetting) => void;
   onImportConfig: (fields: FormFieldSetting[]) => void;
@@ -29,9 +29,9 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
     onLoadPDFWithConfig
   } = props;
   // @ts-ignore
-  const handleFieldUpdate = (field: string, value: any) => {
-    if (!selectedField) return;
-    onUpdateField(selectedField.id, { [field]: value });
+  const handleFieldUpdate = (field: FormFieldSetting, value: any) => {
+    if (!field) return;
+    onUpdateField(field.id, {...value});
   };
 
   // @ts-ignore
@@ -51,10 +51,10 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
             return {...x, position: x.position || ind + 1};
           })
           .filter((field) => field.page_number === pageActive)
-          .map((field, ind) => {
+          .map((field: FormFieldSetting, ind) => {
           return (
             <Col xs={24} key={field.id}>
-              <FieldItemSetting data={field} pos={ind + 1} value={0} onChange={() => {}} />
+              <FieldItemSettingUI data={field} pos={ind + 1} value={0} onChange={(v) => handleFieldUpdate(field, v)} />
             </Col>
           )
         })}
@@ -168,33 +168,15 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
                 const configText = await configFile.text();
                 const config = JSON.parse(configText);
                 
-                if (!config.formFields || !Array.isArray(config.formFields)) {
+                if (!config.form_fields || !Array.isArray(config.form_fields)) {
                   console.log('Invalid config format. Config must contain formFields array.');
                   return;
                 }
                 
-                // Validate and clean form fields
-                const validatedFields = config.formFields.map((field: any) => ({
-                  id: field.id || `field_${Date.now()}_${Math.random()}`,
-                  type: field.type || 'text',
-                  label: field.label || 'Imported Field',
-                  name: field.name || `field_${Date.now()}`,
-                  x: field.box.x || 0,
-                  y: field.y || 0,
-                  width: field.width || 150,
-                  height: field.height || 30,
-                  fontSize: field.fontSize || 12,
-                  color: field.color || '#000000',
-                  required: field.required || false,
-                  placeholder: field.placeholder || '',
-                  pageNumber: field.pageNumber || 1
-                }));
-                
-                onImportConfig(validatedFields);
-                console.log(`Successfully imported ${validatedFields.length} form fields from config. Please load the corresponding PDF file.`);
+                onImportConfig(config.form_fields);
+                console.log(`Successfully imported ${config.form_fields.length} form fields from config. Please load the corresponding PDF file.`);
               } catch (error) {
                 console.error('Config import error:', error);
-                console.log('Error importing config file');
               }
             };
             input.click();

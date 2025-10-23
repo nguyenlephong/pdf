@@ -80,7 +80,7 @@ function PDFSettingPage(props: IProps) {
     setFormFields(dataFields);
   };
   
-  const handleUpdateField = (fieldId: string, updates: Partial<FormFieldBox>) => {
+  const handleUpdateBoxField = (fieldId: string, updates: Partial<FormFieldBox>) => {
     setFormFields(
       formFields.map((field) => {
         if (field.id !== fieldId) return field;
@@ -94,6 +94,22 @@ function PDFSettingPage(props: IProps) {
       setSelectedField({
         ...selectedField,
         box: {...selectedField.box, ...updates}
+      });
+    }
+  };
+  
+  const handleUpdateField = (fieldId: string, updates: Partial<FormFieldSetting>) => {
+    setFormFields(
+      formFields.map((field) => {
+        if (field.id !== fieldId) return field;
+        return {...field, ...updates};
+      })
+    );
+    
+    if (selectedField?.id === fieldId) {
+      setSelectedField({
+        ...selectedField,
+        ...updates
       });
     }
   };
@@ -137,7 +153,7 @@ function PDFSettingPage(props: IProps) {
               onSelectField={handleSelectField}
               selectedField={selectedField}
               onPDFLoad={handlePDFLoad}
-              onUpdateField={handleUpdateField}
+              onUpdateBoxField={handleUpdateBoxField}
               onDeleteField={handleDeleteField}
             />
           </div>

@@ -183,6 +183,12 @@ h3, p {
   align-content: center;
   align-items: center;
 }
+.f-start {
+  display: flex;
+  justify-content: flex-start;
+  align-content: center;
+  align-items: center;
+}
 .f-end {
   display: flex;
   justify-content: flex-end;

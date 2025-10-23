@@ -1,6 +1,8 @@
 import ReactDOM, {createRoot} from "react-dom/client";
-import React from "react";
 import PDFSettingPage from "./pdf.ui";
+import {CacheProvider} from '@emotion/react'
+import {ConfigProvider as AntConfigProvider} from 'antd'
+import muiCache from '../../../emotion-cache'
 
 let root: ReactDOM.Root | null = null;
 
@@ -25,8 +27,13 @@ export function mount(target: HTMLElement | string, props?: any) {
   // If container belongs to an iframe/shadow root, use that container's ownerDocument for createRoot
   // createRoot accepts an Element; React will operate on the correct document context.
   root = createRoot(container);
-  // @ts-ignore
-  root.render(<React.StrictMode><PDFSettingPage {...props} /></React.StrictMode>);
+  root.render(
+    <CacheProvider value={muiCache}>
+      <AntConfigProvider>
+        <PDFSettingPage {...props} />
+      </AntConfigProvider>
+    </CacheProvider>
+  );
 }
 
 export function unmount(_target?: HTMLElement | string) {
