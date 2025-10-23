@@ -331,17 +331,6 @@ export class PDFSettingService {
       return [];
     }
     
-    // Validate and clean form fields
-    const validatedFields: FormFieldSetting[] = config.form_fields.map((field: any) => ({
-      id: field.id || `field_${Date.now()}_${Math.random()}`,
-      meta: field.meta,
-      box: field.box,
-      font_size: field.font_size || 12,
-      color: field.color || '#000000',
-      page_number: field.page_number || 1,
-      position: field.position || 1,
-    }));
-    
-    return validatedFields;
+    return config.form_fields;
   }
 }

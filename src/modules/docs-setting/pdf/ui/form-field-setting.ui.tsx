@@ -13,6 +13,7 @@ type IProps = {
   value: any;
   onChange: (v: FormFieldSetting) => void;
 }
+
 const FIELD_OPTS = [
   {
     "label": "Hệ thống - Ngày tháng năm ký",
@@ -64,13 +65,14 @@ const FIELD_OPTS = [
     "value": "base_customer_address",
     "description": "App tự động lấy thông tin địa chỉ khách hàng (brand) hiển thị trên tài liệu, không cho phép chỉnh sửa."
   }
-]
+];
+
 const FormFieldSettingUI = (props: IProps) => {
   const {data, onChange} = props;
   
   const [field, setField] = React.useState<any>({...props.data});
   
-  const [opt, setOpt] = React.useState<string>('free_text');
+  const [opt, setOpt] = React.useState<string>(props.data?.setting?.type || 'free_text');
   
   const handleSaveSetting = (type: string, settingData: any) => {
     const newField: FormFieldSetting = {
@@ -83,12 +85,14 @@ const FormFieldSettingUI = (props: IProps) => {
     setField(newField);
     onChange(newField);
   }
+
   const onFieldChange = (event: SelectChangeEvent) => {
     setOpt(event.target.value);
   };
+
   
-  
-  const fieldId = data.id
+  const fieldId = data.id;
+console.log(`👨‍🎓 PhongNguyen 🎯 form-field-setting.ui.tsx 👉 FormFieldSettingUI 📝:`, field, opt)
   return (
     <Row gutter={[12, 12]}>
       <Col xs={24}>
@@ -102,6 +106,7 @@ const FormFieldSettingUI = (props: IProps) => {
               labelId={"pdf-select-field-" + fieldId}
               id={"pdf-field-setting" + fieldId}
               defaultValue={opt}
+              value={opt}
               label="Loại thông tin*"
               onChange={onFieldChange}
             >
@@ -114,14 +119,13 @@ const FormFieldSettingUI = (props: IProps) => {
             </Select>
           </FormControl>
         </div>
-      
       </Col>
       
       {opt === 'free_text' && (
         <Col xs={24}>
           <div className={"f-start"}>
             <FreeTextForm 
-              data={{}} 
+              data={field} 
               onSaveSetting={(d) => handleSaveSetting('free_text', d)}
             />
           </div>
