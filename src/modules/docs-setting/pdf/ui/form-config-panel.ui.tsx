@@ -1,11 +1,12 @@
 import React from 'react';
-import {FormFieldSetting} from '../types/pdf-setting.type';
+import {CustomerAttributeData, FormFieldSetting} from '../types/pdf-setting.type';
 import {PDFConfigService} from '../services/config-pdf.service';
 import {Button, Col, Row} from "antd";
 import FieldItemSettingUI from './form-field-setting.ui';
 
 interface FormConfigPanelProps {
   selectedField: FormFieldSetting | null;
+  attributes?: CustomerAttributeData[];
   formFields: FormFieldSetting[];
   pageActive: number;
   pdfFile: File | null;
@@ -18,6 +19,7 @@ interface FormConfigPanelProps {
 
 const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
   const {
+    attributes,
     selectedField,
     formFields,
     pdfFile,
@@ -51,10 +53,13 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
             return {...x, position: x.position || ind + 1};
           })
           .filter((field) => field.page_number === pageActive)
-          .map((field: FormFieldSetting, ind) => {
+          .map((field: FormFieldSetting) => {
           return (
             <Col xs={24} key={field.id}>
-              <FieldItemSettingUI data={field} pos={ind + 1} value={0} onChange={(v) => handleFieldUpdate(field, v)} />
+              <FieldItemSettingUI
+                attributes={attributes}
+                data={field} 
+                onChange={(v) => handleFieldUpdate(field, v)} />
             </Col>
           )
         })}

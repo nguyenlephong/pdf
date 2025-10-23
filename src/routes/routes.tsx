@@ -122,7 +122,7 @@ const settingDataExample: PDFSettingData = {
       "position": 4,
       "page_number": 2,
       "setting": {
-        "type": "system_cccd_number"
+        "type": "system_sign_date"
       }
     },
     {
@@ -197,7 +197,17 @@ const settingDataExample: PDFSettingData = {
         "ts": 1761212797866
       },
       "position": 7,
-      "page_number": 2
+      "page_number": 2,
+      "setting": {
+        "type": "free_text",
+        "title": "Hệ thống - Số CCCD khi xác thực",
+        "answer_type": "min",
+        "min_char": "123",
+        "max_char": "",
+        "confirm_type": "number",
+        "min_value": "",
+        "max_value": ""
+      }
     },
     {
       "id": "field_1761212801946",
@@ -355,7 +365,7 @@ const settingDataExample: PDFSettingData = {
       }
     }
   ],
-  "ts": "2025-10-23T11:35:45.650Z",
+  "ts": "2025-10-23T11:56:01.560Z",
   "version": "1.0"
 }
 
@@ -374,6 +384,11 @@ export const router = createBrowserRouter([
         element: <PDFSetting
           pdfUrl={'https://cdn.jsdelivr.net/gh/phongnguyen-ndsvn/cdn-storage@main/HDPDFEmpty.docx.pdf'}
           settingData={settingDataExample}
+          attributes={[
+            {label: "Mã khách hàng", value: "customer_code"},
+            {label: "Tên khách hàng", value: "customer_name"},
+            {label: "Địa chỉ khách hàng", value: "customer_address"},
+          ]}
           onSaveSetting={function (data: PDFSettingData): void {
             console.log(`👨‍🎓 PhongNguyen 🎯 routes.tsx 👉 setting data 📝:`, data)
           }} />,

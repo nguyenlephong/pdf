@@ -3,26 +3,23 @@ import "./pdf.style.scss";
 import PDFViewer from "./ui/pdf-viewer.ui";
 import FormConfigPanel from "./ui/form-config-panel.ui";
 import PDFFiller from "./ui/PDFFiller";
-import {FormFieldBox, FormFieldSetting, PDFSettingData} from "./types/pdf-setting.type";
+import {FormFieldBox, FormFieldSetting, PDFSettingData, CustomerAttributeData} from "./types/pdf-setting.type";
 import {PDFSettingService} from "./services/pdf-setting.service";
 import {Col, Row} from 'antd';
 
 interface IProps {
   pdfUrl?: string; // CDN URL or local file path
   settingData?: PDFSettingData;
+  attributes?: CustomerAttributeData[];
   onSaveSetting: (data: PDFSettingData) => void;
 }
 
 function PDFSettingPage(props: IProps) {
-  const {pdfUrl, settingData, onSaveSetting} = props;
+  const {pdfUrl, settingData, onSaveSetting, attributes} = props;
   const [pageActive, setPageActive] = useState<number>(0);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [formFields, setFormFields] = useState<FormFieldSetting[]>([]);
   const [selectedField, setSelectedField] = useState<FormFieldSetting | null>(null);
-  
-  React.useEffect(() => {
-    console.log("PDF Docs Setting App received props:", props);
-  }, [props]);
   
   React.useEffect(() => {
     if (pdfUrl) handlePDFLoad(pdfUrl);
@@ -170,6 +167,7 @@ function PDFSettingPage(props: IProps) {
               onSelectField={handleSelectField}
               onImportConfig={handleImportConfig}
               onLoadPDFWithConfig={handleLoadPDFWithConfig}
+              attributes={attributes}
             />
             
             {1 < 0 && (

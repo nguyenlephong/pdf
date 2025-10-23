@@ -5,6 +5,11 @@ export interface PDFSettingData {
   version: string;
 }
 
+export interface CustomerAttributeData {
+  label: string;
+  value: string;
+}
+
 export interface FormFieldSetting {
   id: string
   box: FormFieldBox

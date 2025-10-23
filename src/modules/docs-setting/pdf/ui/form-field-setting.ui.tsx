@@ -6,15 +6,18 @@ import FreeTextForm from "./form/free-text.ui";
 import DropdownForm from "./form/dropdown.ui";
 import React from "react";
 import {Col, Row} from "antd";
-import {FormFieldSetting} from "../types/pdf-setting.type";
+import {CustomerAttributeData, FormFieldSetting} from "../types/pdf-setting.type";
 
 type IProps = {
-  data: any;
-  pos: number;
-  value: any;
+  data: FormFieldSetting;
+  attributes?: CustomerAttributeData[];
   onChange: (v: FormFieldSetting) => void;
 }
 
+type OptionData = {
+  label: string;
+  value: string;
+}
 const FIELD_OPTS = [
   {
     "label": "Hệ thống - Ngày tháng năm ký",
@@ -47,11 +50,6 @@ const FIELD_OPTS = [
     "description": "App tự động lấy tên khách hàng (brand) hiển thị trên tài liệu, không cho phép chỉnh sửa."
   },
   {
-    "label": 'Dữ liệu nền - Thuộc tính - "Tên thuộc tính"',
-    "value": "base_attribute",
-    "description": ""
-  },
-  {
     "label": "Dữ liệu nền - Địa chỉ",
     "value": "base_customer_address",
     "description": "App tự động lấy thông tin địa chỉ khách hàng (brand) hiển thị trên tài liệu, không cho phép chỉnh sửa."
@@ -64,11 +62,23 @@ const FIELD_OPTS = [
 ];
 
 const FormFieldSettingUI = (props: IProps) => {
-  const {data, onChange} = props;
+  const {data, onChange, attributes} = props;
   
   const [field, setField] = React.useState<any>({...props.data});
   
   const [opt, setOpt] = React.useState<string>(props.data?.setting?.type || 'free_text');
+  const [fieldOpts, setFieldOpts] = React.useState<OptionData[]>([]);
+  
+  React.useEffect(() => {
+    let optInit: any[] = FIELD_OPTS.map((opt) => (opt))
+    attributes?.forEach((attribute) => {
+      optInit.push({
+        label: "Dữ liệu nền - Thuộc tính - " + attribute.label,
+        value: attribute.value
+      })
+    });
+    setFieldOpts(optInit);
+  }, [attributes])
   
   const handleSaveSetting = (type: string, settingData: any) => {
     const newField: FormFieldSetting = {
@@ -97,7 +107,6 @@ const FormFieldSettingUI = (props: IProps) => {
 
   
   const fieldId = data.id;
-console.log(`👨‍🎓 PhongNguyen 🎯 form-field-setting.ui.tsx 👉 FormFieldSettingUI 📝:`, field, opt)
   return (
     <Row gutter={[12, 12]}>
       <Col xs={24}>
@@ -118,7 +127,7 @@ console.log(`👨‍🎓 PhongNguyen 🎯 form-field-setting.ui.tsx 👉 FormFie
               <MenuItem value={'free_text'}>
                 <em>Free text</em>
               </MenuItem>
-              {FIELD_OPTS.map((item) => (
+              {fieldOpts.map((item: OptionData) => (
                 <MenuItem key={item.value} value={item.value}>{item.label}</MenuItem>
               ))}
             </Select>
