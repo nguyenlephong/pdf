@@ -1,6 +1,29 @@
 import {FormFieldSetting, PDFSettingData} from "../types/pdf-setting.type";
 
 export class PDFConfigService {
+  
+  static handleDownloadWithUrl = async (url: string, name: string) => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Failed to fetch file");
+      
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = name || "document.pdf";
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error("Download failed:", err);
+    }
+  };
+  
   /**
    * Export PDF file + JSON config separately
    */
@@ -16,14 +39,20 @@ export class PDFConfigService {
         ts: new Date().toISOString(),
         version: '1.0'
       };
-
-      // Download original PDF file
-      const pdfUrl = URL.createObjectURL(pdfFile);
-      const pdfLink = document.createElement('a');
-      pdfLink.href = pdfUrl;
-      pdfLink.download = pdfFile.name;
-      pdfLink.click();
-      URL.revokeObjectURL(pdfUrl);
+      // @ts-ignore
+      if (pdfFile?.url) {
+        // @ts-ignore
+        await this.handleDownloadWithUrl(pdfFile.url, pdfFile.name);
+      } else {
+        
+        // Download original PDF file
+        const pdfUrl = URL.createObjectURL(pdfFile);
+        const pdfLink = document.createElement('a');
+        pdfLink.href = pdfUrl;
+        pdfLink.download = pdfFile.name;
+        pdfLink.click();
+        URL.revokeObjectURL(pdfUrl);
+      }
 
       // Download JSON config file
       const configBlob = new Blob([JSON.stringify(config, null, 2)], { 

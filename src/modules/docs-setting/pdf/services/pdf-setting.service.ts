@@ -1,6 +1,6 @@
 import {PDFDocument, PDFTextField, rgb, StandardFonts} from 'pdf-lib';
 import {PDFFormData} from '../types/form-field.type';
-import {FormFieldSetting} from "../types/pdf-setting.type";
+import {FormFieldSetting, PDFSettingData} from "../types/pdf-setting.type";
 
 export class PDFSettingService {
   /**
@@ -321,5 +321,27 @@ export class PDFSettingService {
     });
     
     return sampleData;
+  }
+  
+  static handleLoadPDFConfig(data: PDFSettingData): FormFieldSetting[] {
+    const config = data;
+    
+    if (!config.form_fields || !Array.isArray(config.form_fields)) {
+      console.log('Invalid config format. Config must contain formFields array.');
+      return [];
+    }
+    
+    // Validate and clean form fields
+    const validatedFields: FormFieldSetting[] = config.form_fields.map((field: any) => ({
+      id: field.id || `field_${Date.now()}_${Math.random()}`,
+      meta: field.meta,
+      box: field.box,
+      font_size: field.font_size || 12,
+      color: field.color || '#000000',
+      page_number: field.page_number || 1,
+      position: field.position || 1,
+    }));
+    
+    return validatedFields;
   }
 }

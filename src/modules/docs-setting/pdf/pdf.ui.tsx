@@ -3,7 +3,7 @@ import "./pdf.style.scss";
 import PDFViewer from "./ui/pdf-viewer.ui";
 import FormConfigPanel from "./ui/form-config-panel.ui";
 import PDFFiller from "./ui/PDFFiller";
-import {PDFSettingData, FormFieldSetting, FormFieldBox} from "./types/pdf-setting.type";
+import {FormFieldBox, FormFieldSetting, PDFSettingData} from "./types/pdf-setting.type";
 import {PDFSettingService} from "./services/pdf-setting.service";
 import {Col, Row} from 'antd';
 
@@ -14,7 +14,7 @@ interface IProps {
 }
 
 function PDFSettingPage(props: IProps) {
-  const {pdfUrl} = props;
+  const {pdfUrl, settingData, onSaveSetting} = props;
   const [pageActive, setPageActive] = useState<number>(0);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [formFields, setFormFields] = useState<FormFieldSetting[]>([]);
@@ -27,6 +27,17 @@ function PDFSettingPage(props: IProps) {
   React.useEffect(() => {
     if (pdfUrl) handlePDFLoad(pdfUrl);
   }, [pdfUrl]);
+  
+  React.useEffect(() => {
+    if (settingData) {
+      const formFieldLoaded = PDFSettingService.handleLoadPDFConfig(settingData);
+      setFormFields(formFieldLoaded);
+    }
+  }, [settingData]);
+  
+  React.useEffect(() => {
+    if (onSaveSetting) onSaveSetting({form_fields: formFields, ts: Date.now().toString(), name: 'testing.json', version: '1.0'});
+  }, [formFields]);
   
   const handlePDFLoad = async (input: File | string) => {
     try {
@@ -72,20 +83,19 @@ function PDFSettingPage(props: IProps) {
   const handleUpdateField = (fieldId: string, updates: Partial<FormFieldBox>) => {
     setFormFields(
       formFields.map((field) => {
-        if(field.id === fieldId) {
-          let fieldUpdate: FormFieldSetting = {...field}
-          fieldUpdate.box = {...field.box, ...updates}
-          return fieldUpdate;
-        }
-        else return field
-        
-        }
-      )
+        if (field.id !== fieldId) return field;
+        let fieldUpdate: FormFieldSetting = {...field}
+        fieldUpdate.box = {...field.box, ...updates}
+        return fieldUpdate;
+      })
     );
+    
     if (selectedField?.id === fieldId) {
-      setSelectedField({...selectedField, ...updates});
+      setSelectedField({
+        ...selectedField,
+        box: {...selectedField.box, ...updates}
+      });
     }
-    console.log("formFields", formFields, fieldId);
   };
   
   const handleDeleteField = (fieldId: string) => {

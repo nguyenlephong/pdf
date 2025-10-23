@@ -236,6 +236,7 @@ const FormFieldOverlayUi: React.FC<FormFieldOverlayProps> = (props) => {
             height: "100%",
             cursor: "move",
             position: "relative",
+            paddingRight: 8
           }}
           className={'f-end'}
         >
