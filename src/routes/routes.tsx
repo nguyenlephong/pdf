@@ -122,7 +122,7 @@ const settingDataExample: PDFSettingData = {
       "position": 4,
       "page_number": 2,
       "setting": {
-        "type": "system_cccd_number",
+        "type": "system_cccd_number"
       }
     },
     {
@@ -146,7 +146,7 @@ const settingDataExample: PDFSettingData = {
       "position": 5,
       "page_number": 2,
       "setting": {
-        "type": "system_cccd_number",
+        "type": "system_cccd_address"
       }
     },
     {
@@ -170,7 +170,12 @@ const settingDataExample: PDFSettingData = {
       "position": 6,
       "page_number": 2,
       "setting": {
-        "type": "system_cccd_address",
+        "type": "dropdown_select",
+        "title": "Ngân hàng sử dụng nhận thưởng",
+        "options": [
+          "Ngân hàng TMCP Á Châu (ACB)",
+          "Ngân hàng TPBank"
+        ]
       }
     },
     {
@@ -296,7 +301,10 @@ const settingDataExample: PDFSettingData = {
         "ts": 1761212827224
       },
       "position": 11,
-      "page_number": 1
+      "page_number": 1,
+      "setting": {
+        "type": "base_customer_code"
+      }
     },
     {
       "id": "field_1761212833038",
@@ -317,7 +325,10 @@ const settingDataExample: PDFSettingData = {
         "ts": 1761212833038
       },
       "position": 12,
-      "page_number": 1
+      "page_number": 1,
+      "setting": {
+        "type": "system_cccd_address"
+      }
     },
     {
       "id": "field_1761212837302",
@@ -338,10 +349,13 @@ const settingDataExample: PDFSettingData = {
         "ts": 1761212837302
       },
       "position": 13,
-      "page_number": 1
+      "page_number": 1,
+      "setting": {
+        "type": "system_cccd_number"
+      }
     }
   ],
-  "ts": "2025-10-23T10:37:48.293Z",
+  "ts": "2025-10-23T11:35:45.650Z",
   "version": "1.0"
 }
 

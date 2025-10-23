@@ -57,9 +57,8 @@ const FreeTextForm: React.FC<ItemConfProps> = ({ data, onSaveSetting }) => {
   
   // Đồng bộ khi props.data thay đổi (chỉ set khi thực sự khác để tránh re-render thừa)
   useEffect(() => {
-    
+    //@ts-ignore
     const next = normalizeDataToForm(data?.setting);
-    console.log(`👨‍🎓 PhongNguyen 🎯 free-text.ui.tsx 👉 next 📝:`, next, data)
     setForm((prev) => {
       const same =
         prev.title === next.title &&
@@ -166,7 +165,7 @@ const FreeTextForm: React.FC<ItemConfProps> = ({ data, onSaveSetting }) => {
   };
   
   const { title, answerType, minChar, maxChar, confirmType, minValue, maxValue } = form;
-  console.log(`👨‍🎓 PhongNguyen 🎯 free-text.ui.tsx 👉 FreeTextForm 📝form :`, form)
+
   return (
     <Box
       sx={{

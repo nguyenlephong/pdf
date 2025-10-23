@@ -3,6 +3,7 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, {SelectChangeEvent} from '@mui/material/Select';
 import FreeTextForm from "./form/free-text.ui";
+import DropdownForm from "./form/dropdown.ui";
 import React from "react";
 import {Col, Row} from "antd";
 import {FormFieldSetting} from "../types/pdf-setting.type";
@@ -46,24 +47,19 @@ const FIELD_OPTS = [
     "description": "App tự động lấy tên khách hàng (brand) hiển thị trên tài liệu, không cho phép chỉnh sửa."
   },
   {
-    "label": "Dữ liệu nền - Thuộc tính - Loại hình điểm bán",
-    "value": "base_attribute_sale_type",
-    "description": "App tự động lấy giá trị thuộc tính 'Loại hình điểm bán' của brand hiển thị trên tài liệu, không cho phép chỉnh sửa."
-  },
-  {
-    "label": "Dữ liệu nền - Thuộc tính - Quy mô",
-    "value": "base_attribute_scale",
-    "description": "App tự động lấy giá trị thuộc tính 'Quy mô' của brand hiển thị trên tài liệu, không cho phép chỉnh sửa."
-  },
-  {
-    "label": "Dữ liệu nền - Thuộc tính - Khu vực",
-    "value": "base_attribute_region",
-    "description": "App tự động lấy giá trị thuộc tính 'Khu vực' của brand hiển thị trên tài liệu, không cho phép chỉnh sửa."
+    "label": 'Dữ liệu nền - Thuộc tính - "Tên thuộc tính"',
+    "value": "base_attribute",
+    "description": ""
   },
   {
     "label": "Dữ liệu nền - Địa chỉ",
     "value": "base_customer_address",
     "description": "App tự động lấy thông tin địa chỉ khách hàng (brand) hiển thị trên tài liệu, không cho phép chỉnh sửa."
+  },
+  {
+    "label": "Chọn giá trị",
+    "value": "dropdown_select",
+    "description": ""
   }
 ];
 
@@ -87,7 +83,16 @@ const FormFieldSettingUI = (props: IProps) => {
   }
 
   const onFieldChange = (event: SelectChangeEvent) => {
-    setOpt(event.target.value);
+    const newType = event.target.value;
+    setOpt(newType);
+    let fieldUpdate: FormFieldSetting = {
+      ...field,
+      setting: {
+        ...(field?.setting ?? {}),
+        type: newType
+      }
+    };
+    onChange(fieldUpdate);
   };
 
   
@@ -127,6 +132,17 @@ console.log(`👨‍🎓 PhongNguyen 🎯 form-field-setting.ui.tsx 👉 FormFie
             <FreeTextForm 
               data={field} 
               onSaveSetting={(d) => handleSaveSetting('free_text', d)}
+            />
+          </div>
+        </Col>
+      )}
+      
+      {opt === 'dropdown_select' && (
+        <Col xs={24}>
+          <div className={"f-start"}>
+            <DropdownForm 
+              data={field} 
+              onSaveSetting={(d) => handleSaveSetting('dropdown_select', d)}
             />
           </div>
         </Col>
