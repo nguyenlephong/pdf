@@ -40,10 +40,10 @@ export class PDFService {
         // Add the field to the page
         const pageHeight = page.getHeight();
         textField.addToPage(page, {
-          x: field.x,
-          y: pageHeight - field.y - field.height, // PDF coordinates are from bottom
-          width: field.width,
-          height: field.height,
+          x: field.box.x,
+          y: pageHeight - field.box.y - field.box.height, // PDF coordinates are from bottom
+          width: field.box.width,
+          height: field.box.height,
           borderColor: rgb(0, 0, 0),
           backgroundColor: rgb(1, 1, 1), // White background
           borderWidth: 1,

@@ -27,7 +27,7 @@ type FormFieldMeta = {
   type: string;
 }
 
-type FormFieldBox = {
+export type FormFieldBox = {
   x: number;
   y: number;
   width: number;

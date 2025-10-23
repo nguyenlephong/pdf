@@ -1,5 +1,5 @@
 import React from 'react';
-import {FormFieldSetting} from '../types/pdf-setting.type';
+import {FormFieldBox, FormFieldSetting} from '../types/pdf-setting.type';
 import {PDFConfigService} from '../services/config-pdf.service';
 import {Button, Col, Row} from "antd";
 import FieldItemSetting from './form-field-setting.ui';
@@ -9,7 +9,7 @@ interface FormConfigPanelProps {
   formFields: FormFieldSetting[];
   pageActive: number;
   pdfFile: File | null;
-  onUpdateField: (fieldId: string, updates: Partial<FormFieldSetting>) => void;
+  onUpdateField: (fieldId: string, updates: Partial<FormFieldBox>) => void;
   onDeleteField: (fieldId: string) => void;
   onSelectField: (field: FormFieldSetting) => void;
   onImportConfig: (fields: FormFieldSetting[]) => void;
@@ -179,7 +179,7 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
                   type: field.type || 'text',
                   label: field.label || 'Imported Field',
                   name: field.name || `field_${Date.now()}`,
-                  x: field.x || 0,
+                  x: field.box.x || 0,
                   y: field.y || 0,
                   width: field.width || 150,
                   height: field.height || 30,

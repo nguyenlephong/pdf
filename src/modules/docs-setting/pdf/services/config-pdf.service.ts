@@ -62,35 +62,13 @@ export class PDFConfigService {
 
       // Validate and clean form fields
       const validatedFields = config.form_fields.map((field: any) => ({
-        type: field.type || 'text',
-        label: field.label || 'Imported Field',
-        name: field.name || `field_${Date.now()}`,
-        x: field.x || 0,
-        y: field.y || 0,
-        width: field.width || 150,
-        height: field.height || 30,
-        required: field.required || false,
-        placeholder: field.placeholder || '',
-        page_number: field.pageNumber || 1,
-        
         id: field.id || `field_${Date.now()}_${Math.random()}`,
-        font_size: field.fontSize || 12,
-        color: field.color || '#000000',
+        font_size: field.font_size || 12,
+        color: field.meta.color || '#000000',
+        page_number: field.page_number || 1,
         position: field.position || 1,
-        box: {
-          x: field.x || 0,
-          y: field.y || 0,
-          width: field.width || 150,
-          height: field.height || 30,
-        },
-        meta: {
-          type: field.type || 'text',
-          label: field.label || 'Imported Field',
-          name: field.name || `field_${Date.now()}`,
-          required: field.required || false,
-          placeholder: field.placeholder || '',
-          ts: field.ts || Date.now()
-        }
+        box: field.box,
+        meta: field.meta,
       }));
 
       return {

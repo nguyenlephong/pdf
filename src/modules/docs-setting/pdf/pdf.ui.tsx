@@ -3,7 +3,7 @@ import "./pdf.style.scss";
 import PDFViewer from "./ui/pdf-viewer.ui";
 import FormConfigPanel from "./ui/form-config-panel.ui";
 import PDFFiller from "./ui/PDFFiller";
-import {PDFSettingData, FormFieldSetting} from "./types/pdf-setting.type";
+import {PDFSettingData, FormFieldSetting, FormFieldBox} from "./types/pdf-setting.type";
 import {PDFSettingService} from "./services/pdf-setting.service";
 import {Col, Row} from 'antd';
 
@@ -69,10 +69,17 @@ function PDFSettingPage(props: IProps) {
     setFormFields(dataFields);
   };
   
-  const handleUpdateField = (fieldId: string, updates: Partial<FormFieldSetting>) => {
+  const handleUpdateField = (fieldId: string, updates: Partial<FormFieldBox>) => {
     setFormFields(
-      formFields.map((field) =>
-        field.id === fieldId ? {...field, ...updates} : field
+      formFields.map((field) => {
+        if(field.id === fieldId) {
+          let fieldUpdate: FormFieldSetting = {...field}
+          fieldUpdate.box = {...field.box, ...updates}
+          return fieldUpdate;
+        }
+        else return field
+        
+        }
       )
     );
     if (selectedField?.id === fieldId) {

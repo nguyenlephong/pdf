@@ -1,7 +1,7 @@
 import React, {useCallback, useRef, useState} from "react";
 import {Document, Page, pdfjs} from "react-pdf";
 import {useDropzone} from "react-dropzone";
-import {FormFieldSetting} from "../types/pdf-setting.type";
+import {FormFieldBox, FormFieldSetting} from "../types/pdf-setting.type";
 import FormFieldOverlay from "./form-field-overlay.ui";
 import {DndContext, DragEndEvent} from "@dnd-kit/core";
 import {Button, Col, Input, Row} from "antd";
@@ -20,7 +20,7 @@ interface PDFViewerProps {
   onSelectField: (field: FormFieldSetting | null) => void;
   selectedField: FormFieldSetting | null;
   onPDFLoad: (file: File) => void;
-  onUpdateField: (fieldId: string, updates: Partial<FormFieldSetting>) => void;
+  onUpdateField: (fieldId: string, updates: Partial<FormFieldBox>) => void;
   onDeleteField: (fieldId: string) => void;
 }
 
@@ -84,7 +84,6 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
   const handleDragEnd = (event: DragEndEvent) => {
     const {active, delta} = event;
     const fieldData = active.data.current;
-    
     if (fieldData && delta) {
       const field = fieldData.field;
       const fieldScale = fieldData.scale;
