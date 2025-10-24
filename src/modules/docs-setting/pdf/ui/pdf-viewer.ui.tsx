@@ -57,7 +57,6 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
   const [scale, setScale] = useState<number>(1);
   const [snapToGrid, setSnapToGrid] = useState<boolean>(false);
   const [gridSize, setGridSize] = useState<number>(10);
-  const [_fieldCounter, setFieldCounter] = useState<number>(0);
   const [dragOverlapBehavior, setDragOverlapBehavior] = useState<'snap' | 'return'>('return');
   const [dragOverField, setDragOverField] = useState<string | null>(null);
   const [pageOriginalWidth, setPageOriginalWidth] = React.useState<number>(0);
@@ -106,7 +105,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
   }, [pageOriginalWidth]);
   
   React.useEffect(() => {
-    const wrappers = document.querySelectorAll('#pdf-page-thumbnails .pdf-thumbnail-wrapper');
+    const wrappers = document.querySelectorAll('#pdf-page-thumbnails .pdf-thumbnail-canvas');
     wrappers.forEach((el, index) => {
       if (index + 1 === pageNumber) el.classList.add('active');
       else el.classList.remove('active');
@@ -296,7 +295,6 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
         const file = acceptedFiles[0];
         if (file.type === "application/pdf") {
           onPDFLoad(file);
-          setFieldCounter(0); // Reset counter when new PDF is loaded
           renderThumbnails(file).then();
         }
       }
@@ -392,7 +390,6 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
     };
     
     onAddField(newField);
-    setFieldCounter((prev) => prev + 1);
   };
   
   const handleFieldSelect = (field: FormFieldSetting, event?: React.MouseEvent) => {
@@ -480,7 +477,15 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
       
       const wrapper = document.createElement('div');
       wrapper.className = 'pdf-thumbnail-wrapper';
-      if (pageNumber === i) wrapper.classList.add('active');
+      
+      const pageNumberText = document.createElement('div');
+      pageNumberText.className = 'pdf-thumbnail-page-number';
+      pageNumberText.textContent = i.toString();
+      wrapper.appendChild(pageNumberText);
+      
+      const canvasWrapper = document.createElement('div');
+      canvasWrapper.className = 'pdf-thumbnail-canvas';
+      if (pageNumber === i) canvasWrapper.classList.add('active');
       
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d')!;
@@ -492,16 +497,16 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
       
       canvas.addEventListener('click', () => {
         document
-          .querySelectorAll('#pdf-page-thumbnails .pdf-thumbnail-wrapper')
+          .querySelectorAll('#pdf-page-thumbnails .pdf-thumbnail-canvas')
           .forEach((el) => el.classList.remove('active'));
         
-        wrapper.classList.add('active');
-        wrapper.scrollIntoView({behavior: 'smooth', inline: 'center'});
+        canvasWrapper.classList.add('active');
         setPageNumber(i);
         setPageActive(i);
       });
       
-      wrapper.appendChild(canvas);
+      canvasWrapper.appendChild(canvas);
+      wrapper.appendChild(canvasWrapper);
       fragment.appendChild(wrapper);
     }
     
@@ -530,7 +535,6 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
                   const file = (e.target as HTMLInputElement).files?.[0];
                   if (file) {
                     onPDFLoad(file);
-                    setFieldCounter(0);
                   }
                 };
                 input.click();
@@ -652,8 +656,11 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
             sx={{
               border: '1px solid',
               borderColor: 'divider',
-              bgcolor: 'background.paper',
-              '&:hover': {bgcolor: 'action.hover'},
+              backgroundColor: '#000000B2',
+              color: '#FFFFFF',
+              '&:hover': {
+                backgroundColor: '#AAA9BE'
+              },
             }}
           >
             <KeyboardArrowLeft fontSize="small"/>
@@ -756,7 +763,10 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
                         />
                       ))}
                     
-                    <Button variant={"outlined"} className={'pdf-page-label-btn'}>{pageNumber} / {numPages}</Button>
+                    <div className={'pdf-page-label-btn'}>
+                      {pageNumber} / {numPages}
+                    </div>
+                    
                   </div>
                 </DndContext>
               </div>
@@ -773,8 +783,11 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
             sx={{
               border: '1px solid',
               borderColor: 'divider',
-              bgcolor: 'background.paper',
-              '&:hover': {bgcolor: 'action.hover'},
+              backgroundColor: '#000000B2',
+              color: '#FFFFFF',
+              '&:hover': {
+                backgroundColor: '#AAA9BE'
+              },
             }}
           >
             <KeyboardArrowRight fontSize="small"/>
@@ -782,7 +795,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
         </Box>
       </Box>
       
-      <Box sx={{mt: 0}} className={'f-center'}>
+      <Box sx={{mt: 0, pl: 4, pr: 4,}} className={'f-center'}>
         <div id="pdf-page-thumbnails" className={'pdf-pagination-list'}></div>
       </Box>
     </Stack>

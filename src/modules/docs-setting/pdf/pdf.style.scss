@@ -26,6 +26,16 @@
       position: absolute;
       bottom: 12px;
       right: 12px;
+      
+      width: 42px;
+      background-color: #E8EAED;
+      padding: 8px 12px;
+      font-weight: bold;
+      border-radius: 8px;
+      
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
   }
 
@@ -38,7 +48,7 @@
     display: flex;
     gap: 8px;
     overflow-x: auto;
-    padding: 10px 0;
+    padding: 12px;
     scroll-snap-type: x mandatory;
     max-width: 320px;
 
@@ -50,57 +60,78 @@
       background: #ccc;
       border-radius: 3px;
     }
-
+    
     .pdf-thumbnail-wrapper {
       position: relative;
       flex: 0 0 auto;
-      display: inline-block;
-      border-radius: 6px;
+      scroll-snap-align: center;
+      
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+
+      &.active {
+        canvas {
+          filter: brightness(1);
+          border: 1px solid #1677ff;
+        }
+
+        &::after {
+          //opacity: 0;
+        }
+      }
+
+      &:not(.active){
+        canvas {
+          height: 102px;
+        }
+      }
+    }
+
+    .pdf-thumbnail-canvas {
+      position: relative;
+      flex: 0 0 auto;
       scroll-snap-align: center;
 
       canvas {
         width: 80px;
-        height: auto;
-        border-radius: 6px;
+        height: 100px;
         cursor: pointer;
         transition: all 0.25s ease;
-        box-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
         z-index: 1;
         position: relative;
       }
-
+      
       /* Gray overlay */
       &::after {
         content: "";
+        height: 102px;
         position: absolute;
         inset: 0;
         background: rgba(0, 0, 0, 0.4);
-        border-radius: 6px;
         transition: opacity 0.25s ease;
         pointer-events: none; // ✅ allow click on canvas
         z-index: 2;
       }
 
       &:hover canvas {
-        transform: scale(1.03);
         filter: brightness(0.7);
       }
 
       &.active {
         canvas {
           filter: brightness(1);
-          border: 2px solid #1677ff;
-          box-shadow: 0 0 5px rgba(22, 119, 255, 0.5);
-          transform: scale(1.05);
+          border: 1px solid #1677ff;
         }
 
         &::after {
-          opacity: 0; // remove overlay when active
+          opacity: 0;
         }
       }
     }
   }
-  
   
   .pdf_form-field-setting--item {
     display: flex;
@@ -139,6 +170,11 @@
     display: flex;
     justify-content: flex-end;
     align-items: center;
+  }
+  
+  .pdf_text-pos {
+    color: #FF2D55;
+    font-weight: bold;
   }
 }
 

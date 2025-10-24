@@ -16,7 +16,7 @@ interface FormConfigPanelProps {
   onSelectField: (field: FormFieldSetting) => void;
   onImportConfig: (fields: FormFieldSetting[]) => void;
   onLoadPDFWithConfig: (pdfFile: File, formFields: FormFieldSetting[]) => void;
-  onSaveSetting: (setting: PDFSettingData) => void;
+  onSaveSetting?: (setting: PDFSettingData) => void;
 }
 
 const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
@@ -53,10 +53,14 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
       return;
     }
     
-    let configExport = await PDFConfigService.exportConfig(formFields);
-    onSaveSetting(configExport);
+    let configExport: PDFSettingData = {
+      name: "config.json",
+      form_fields: formFields,
+      ts: new Date().toISOString(),
+      version: '1.0'
+    };
+    if (onSaveSetting) onSaveSetting(configExport);
   };
-  
   
   return (
     <div className="pdf-config-panel">
@@ -101,10 +105,8 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
                 }
                 try {
                   await PDFConfigService.exportPDFWithConfig(pdfFile, formFields);
-                  console.log('PDF and config files exported successfully!');
                 } catch (error) {
                   console.error('Export error:', error);
-                  console.log('Error exporting files');
                 }
               }}
               disabled={formFields.length === 0 || !pdfFile}

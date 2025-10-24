@@ -24,26 +24,27 @@ export class PDFConfigService {
     }
   };
   
+  static handleDownload = async (config: PDFSettingData) => {
+    // Download JSON config file
+    const configBlob = new Blob([JSON.stringify(config, null, 2)], {
+      type: 'application/json'
+    });
+    const configUrl = URL.createObjectURL(configBlob);
+    const configLink = document.createElement('a');
+    configLink.href = configUrl;
+    configLink.download = "config.json";
+    configLink.click();
+    URL.revokeObjectURL(configUrl);
+  }
+  
   static async exportConfig(formFields: FormFieldSetting[]): Promise<PDFSettingData> {
     try {
-      const config: PDFSettingData = {
+      return {
         name: "config.json",
         form_fields: formFields,
         ts: new Date().toISOString(),
         version: '1.0'
       };
-      
-      // Download JSON config file
-      const configBlob = new Blob([JSON.stringify(config, null, 2)], {
-        type: 'application/json'
-      });
-      const configUrl = URL.createObjectURL(configBlob);
-      const configLink = document.createElement('a');
-      configLink.href = configUrl;
-      configLink.download = "config.json";
-      configLink.click();
-      URL.revokeObjectURL(configUrl);
-      return config;
     } catch (e) {
       return {
         name: "config.json",

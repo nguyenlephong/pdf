@@ -127,7 +127,7 @@ const FormFieldSettingUI = React.forwardRef((props: IProps, ref) => {
         <Grid size={12}>
         <div className={"pdf_form-field-setting--item"}>
           <div className={"pdf_form-field-label"}>
-            <p>Vị trí {data.position}</p>
+            <p className={'pdf_text-pos'}>Vị trí {data.position}</p>
           </div>
           <FormControl sx={{width: '100%', textAlign: 'left'}} size="small">
             <InputLabel id={"pdf-select-field-" + fieldId}>Loại thông tin*</InputLabel>

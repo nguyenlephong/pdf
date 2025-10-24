@@ -11,8 +11,8 @@ interface IProps {
   pdfUrl?: string; // CDN URL or local file path
   settingData?: PDFSettingData;
   attributes?: CustomerAttributeData[];
-  onSaveSetting: (data: PDFSettingData) => void;
-  onChangeSetting: (data: PDFSettingData) => void;
+  onSaveSetting?: (data: PDFSettingData) => void;
+  onChangeSetting?: (data: PDFSettingData) => void;
   config?: ToolSettingConfig;
 }
 
@@ -68,6 +68,8 @@ function PDFSettingPage(props: IProps) {
       if (existingFields.length > 0) {
         setFormFields(existingFields);
       }
+      
+      setPageActive(1)
     } catch (error) {
       console.error("Error loading or extracting PDF:", error);
     }
