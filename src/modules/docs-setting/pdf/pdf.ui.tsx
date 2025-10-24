@@ -148,7 +148,7 @@ function PDFSettingPage(props: IProps) {
   return (
     <div className="mfe-pdf-setting-page">
       <Grid container className={"main-container"} rowSpacing={1}>
-        <Grid size={6}>
+        <Grid size={{ xs: 12, md: 6, xl: 8 }}>
           <div className="pdf-container">
             <PDFViewer
               pdfFile={pdfFile}
@@ -165,7 +165,7 @@ function PDFSettingPage(props: IProps) {
           </div>
         </Grid>
         
-        <Grid size={6}>
+        <Grid size={{ xs: 12, md: 6, xl: 4 }}>
           <div className="pdf-config-container">
             <FormConfigPanel
               selectedField={selectedField}
