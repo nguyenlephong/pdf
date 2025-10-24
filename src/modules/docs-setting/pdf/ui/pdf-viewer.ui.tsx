@@ -9,6 +9,7 @@ import {
   Box,
   Button,
   Checkbox,
+  CircularProgress,
   FormControl,
   FormControlLabel,
   IconButton,
@@ -54,12 +55,16 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
   } = props;
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
+  const [isFirstRender, setIsFirstRender] = useState<boolean>(true);
   const [scale, setScale] = useState<number>(1);
   const [snapToGrid, setSnapToGrid] = useState<boolean>(false);
   const [gridSize, setGridSize] = useState<number>(10);
   const [dragOverlapBehavior, setDragOverlapBehavior] = useState<'snap' | 'return'>('return');
   const [dragOverField, setDragOverField] = useState<string | null>(null);
   const [pageOriginalWidth, setPageOriginalWidth] = React.useState<number>(0);
+  const [pageOriginalHeight, setPageOriginalHeight] = React.useState<number>(0);
+  const [loading, setLoading] = React.useState(true);
+  
   
   const pageRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -97,24 +102,35 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
     };
   }, [pageOriginalWidth]);
   
-  const handlePageRenderSuccess = React.useCallback((page: any) => {
-    if (!pageOriginalWidth) {
-      const originalWidth = page.originalWidth || page.viewport.width;
-      setPageOriginalWidth(originalWidth);
-    }
-  }, [pageOriginalWidth]);
-  
   React.useEffect(() => {
     const wrappers = document.querySelectorAll('#pdf-page-thumbnails .pdf-thumbnail-canvas');
     wrappers.forEach((el, index) => {
       if (index + 1 === pageNumber) el.classList.add('active');
       else el.classList.remove('active');
     });
+    setLoading(true);
   }, [pageNumber]);
   
   React.useEffect(() => {
-    if (pdfFile) renderThumbnails(pdfFile).then();
-  }, [pdfFile])
+    if (pdfFile && !loading && isFirstRender) {
+      renderThumbnails(pdfFile).then();
+      setIsFirstRender(false)
+    }
+  }, [pdfFile, loading, isFirstRender])
+  
+  const handlePageRenderSuccess = React.useCallback((page: any) => {
+    if (!pageOriginalWidth) {
+      const originalWidth = page.originalWidth || page.viewport.width;
+      setPageOriginalWidth(originalWidth);
+    }
+    
+    if (!pageOriginalHeight) {
+      const originalHeight = page.originalHeight || page.viewport.height;
+      setPageOriginalHeight(originalHeight);
+    }
+    setLoading(false)
+  }, [pageOriginalWidth, pageOriginalHeight]);
+  
   
   const handleDragStart = (event: any) => {
     // Select the field when starting to drag
@@ -515,7 +531,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
     URL.revokeObjectURL(url);
   }
   
-  if (!pdfFile) {
+  if (!pdfFile && !loading) {
     return (
       <div className="file-upload" {...getRootProps()}>
         <input {...getInputProps()} />
@@ -693,7 +709,19 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
             
             
             <Box>
-              <div ref={containerRef}>
+              <div
+                ref={containerRef}
+                style={{height: pageOriginalHeight}}
+              >
+                {(pageOriginalHeight && loading) ? (
+                  <div className={'f-center w-full'} style={{position: "absolute", height: '60%'}}>
+                    <CircularProgress
+                      size={48}
+                      sx={{position: "absolute", color: "#1976d2", zIndex: 2}}
+                    />
+                  </div>
+                ) : null}
+                
                 <DndContext
                   onDragStart={handleDragStart}
                   onDragMove={handleDragMove}
@@ -711,8 +739,15 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
                       position: "relative",
                     }}
                   >
-                    <Document file={pdfFile} onLoadSuccess={onDocumentLoadSuccess}>
+                    <Document
+                      file={pdfFile}
+                      loading={''}
+                      noData={''}
+                      onLoadSuccess={onDocumentLoadSuccess}
+                    >
                       <Page
+                        loading={''}
+                        noData={''}
                         pageNumber={pageNumber}
                         scale={scale}
                         renderTextLayer={false}
@@ -721,7 +756,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
                       />
                     </Document>
                     
-                    {snapToGrid && (
+                    {!loading && snapToGrid && (
                       <div
                         className="grid-overlay"
                         style={{
@@ -741,7 +776,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
                       />
                     )}
                     
-                    {formFields
+                    {!loading && formFields
                       .filter((field) => field.page_number === pageNumber)
                       .map((field) => (
                         <FormFieldOverlay
@@ -763,10 +798,12 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
                         />
                       ))}
                     
-                    <div className={'pdf-page-label-btn'}>
-                      {pageNumber} / {numPages}
-                    </div>
-                    
+                    {!loading && (
+                      <div className={'pdf-page-label-btn'}>
+                        {pageNumber} / {numPages}
+                      </div>
+                    )}
+                  
                   </div>
                 </DndContext>
               </div>
