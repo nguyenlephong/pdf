@@ -15,7 +15,8 @@ import {
   InputLabel,
   MenuItem,
   Select,
-  SelectChangeEvent, Stack,
+  SelectChangeEvent,
+  Stack,
   TextField,
   Typography
 } from '@mui/material';
@@ -53,13 +54,56 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
   } = props;
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
-  const [scale, setScale] = useState<number>(1.0);
+  const [scale, setScale] = useState<number>(1);
   const [snapToGrid, setSnapToGrid] = useState<boolean>(false);
   const [gridSize, setGridSize] = useState<number>(10);
   const [_fieldCounter, setFieldCounter] = useState<number>(0);
   const [dragOverlapBehavior, setDragOverlapBehavior] = useState<'snap' | 'return'>('return');
   const [dragOverField, setDragOverField] = useState<string | null>(null);
+  const [pageOriginalWidth, setPageOriginalWidth] = React.useState<number>(0);
+  
   const pageRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  React.useEffect(() => {
+    if (!containerRef.current) return;
+    const el = containerRef.current;
+    
+    const handleResize = () => {
+      // ✅ Lấy chiều rộng hiển thị thực tế, bỏ padding & scrollbar
+      const availableWidth = el.clientWidth || el.offsetWidth || window.innerWidth;
+      
+      // ✅ Khi đã có kích thước PDF gốc → tính tỉ lệ hiển thị
+      if (pageOriginalWidth > 0 && availableWidth > 0) {
+        // ⚙️ Trừ khoảng padding hoặc margin
+        const padding = 16; // hoặc 24 nếu có khoảng cách hai bên
+        const fitWidth = Math.max(availableWidth - padding, 100);
+        const newScale = fitWidth / pageOriginalWidth;
+        
+        // ✅ Giới hạn scale tối đa = 1.0 (để không phóng to quá khổ)
+        setScale(Math.min(newScale, 1.0));
+      }
+    };
+    
+    handleResize();
+    
+    const observer = new ResizeObserver(handleResize);
+    observer.observe(el);
+    
+    window.addEventListener("resize", handleResize);
+    
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [pageOriginalWidth]);
+  
+  const handlePageRenderSuccess = React.useCallback((page: any) => {
+    if (!pageOriginalWidth) {
+      const originalWidth = page.originalWidth || page.viewport.width;
+      setPageOriginalWidth(originalWidth);
+    }
+  }, [pageOriginalWidth]);
   
   React.useEffect(() => {
     const wrappers = document.querySelectorAll('#pdf-page-thumbnails .pdf-thumbnail-wrapper');
@@ -499,7 +543,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
       </div>
     );
   }
-  console.log(`👨‍🎓 PhongNguyen 🎯 pdf-viewer.ui.tsx 👉  scale 📝:`, scale)
+  
   return (
     <Stack className="pdf-viewer" spacing={0}>
       {config?.enablePDFViewerToolBar && (
@@ -641,78 +685,81 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
             </Box>
             
             
-            <Box >
-              <DndContext
-                onDragStart={handleDragStart}
-                onDragMove={handleDragMove}
-                onDragEnd={handleDragEnd}
-                onDragCancel={handleDragCancel}
-              >
-                <div
-                  ref={pageRef}
-                  className="pdf-page"
-                  onClick={handlePageClick}
-                  onDragOver={handlePageDragOver}
-                  onDrop={handlePageDrop}
-                  style={{
-                    cursor: "default",
-                    position: "relative",
-                  }}
+            <Box>
+              <div ref={containerRef}>
+                <DndContext
+                  onDragStart={handleDragStart}
+                  onDragMove={handleDragMove}
+                  onDragEnd={handleDragEnd}
+                  onDragCancel={handleDragCancel}
                 >
-                  <Document file={pdfFile} onLoadSuccess={onDocumentLoadSuccess}>
-                    <Page
-                      pageNumber={pageNumber}
-                      scale={scale}
-                      renderTextLayer={false}
-                      renderAnnotationLayer={false}
-                    />
-                  </Document>
-                  
-                  {snapToGrid && (
-                    <div
-                      className="grid-overlay"
-                      style={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        width: "100%",
-                        height: "100%",
-                        pointerEvents: "none",
-                        backgroundImage: `
+                  <div
+                    ref={pageRef}
+                    className="pdf-page"
+                    onClick={handlePageClick}
+                    onDragOver={handlePageDragOver}
+                    onDrop={handlePageDrop}
+                    style={{
+                      cursor: "default",
+                      position: "relative",
+                    }}
+                  >
+                    <Document file={pdfFile} onLoadSuccess={onDocumentLoadSuccess}>
+                      <Page
+                        pageNumber={pageNumber}
+                        scale={scale}
+                        renderTextLayer={false}
+                        renderAnnotationLayer={false}
+                        onRenderSuccess={handlePageRenderSuccess}
+                      />
+                    </Document>
+                    
+                    {snapToGrid && (
+                      <div
+                        className="grid-overlay"
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          width: "100%",
+                          height: "100%",
+                          pointerEvents: "none",
+                          backgroundImage: `
                   linear-gradient(to right, rgba(0,0,0,0.1) 1px, transparent 1px),
                   linear-gradient(to bottom, rgba(0,0,0,0.1) 1px, transparent 1px)
                 `,
-                        backgroundSize: `${gridSize * scale}px ${gridSize * scale}px`,
-                        zIndex: 1,
-                      }}
-                    />
-                  )}
-                  
-                  {formFields
-                    .filter((field) => field.page_number === pageNumber)
-                    .map((field) => (
-                      <FormFieldOverlay
-                        key={field.id}
-                        position={field.position}
-                        field={field}
-                        scale={scale}
-                        isSelected={selectedField?.id === field.id}
-                        isDragOver={dragOverField === field.id}
-                        onClick={(e) => handleFieldSelect(field, e)}
-                        onMove={(newX, newY) => handleFieldMove(field.id, newX, newY)}
-                        onResize={(newWidth, newHeight) =>
-                          handleFieldResize(field.id, newWidth, newHeight)
-                        }
-                        onDelete={(e) => handleFieldDelete(field.id, e)}
-                        allFields={formFields}
-                        snapToGrid={snapToGrid}
-                        gridSize={gridSize}
+                          backgroundSize: `${gridSize * scale}px ${gridSize * scale}px`,
+                          zIndex: 1,
+                        }}
                       />
-                    ))}
-                  
-                  <Button variant={"outlined"} className={'pdf-page-label-btn'}>{pageNumber} / {numPages}</Button>
-                </div>
-              </DndContext>
+                    )}
+                    
+                    {formFields
+                      .filter((field) => field.page_number === pageNumber)
+                      .map((field) => (
+                        <FormFieldOverlay
+                          key={field.id}
+                          position={field.position}
+                          field={field}
+                          scale={scale}
+                          isSelected={selectedField?.id === field.id}
+                          isDragOver={dragOverField === field.id}
+                          onClick={(e) => handleFieldSelect(field, e)}
+                          onMove={(newX, newY) => handleFieldMove(field.id, newX, newY)}
+                          onResize={(newWidth, newHeight) =>
+                            handleFieldResize(field.id, newWidth, newHeight)
+                          }
+                          onDelete={(e) => handleFieldDelete(field.id, e)}
+                          allFields={formFields}
+                          snapToGrid={snapToGrid}
+                          gridSize={gridSize}
+                        />
+                      ))}
+                    
+                    <Button variant={"outlined"} className={'pdf-page-label-btn'}>{pageNumber} / {numPages}</Button>
+                  </div>
+                </DndContext>
+              </div>
             </Box>
           </Box>
           
@@ -855,21 +902,18 @@ const DraggableInput: React.FC = () => {
   };
   
   return (
-    <TextField
-      fullWidth
-      size="small"
-      variant="outlined"
-      placeholder=""
-      role="button"
+    <div
       draggable
       onDragStart={handleDragStart}
-      InputProps={{
-        sx: {
-          cursor: 'grab',
-          height: 20,
-        },
+      style={{
+        border: '1px solid #d6d6d7',
+        borderRadius: 4,
+        height: 20,
+        cursor: 'grab'
       }}
-    />
-  );
+    >
+    
+    </div>
+  )
 };
 
