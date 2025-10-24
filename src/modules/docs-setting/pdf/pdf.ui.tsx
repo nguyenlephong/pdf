@@ -3,7 +3,7 @@ import "./pdf.style.scss";
 import PDFViewer from "./ui/pdf-viewer.ui";
 import FormConfigPanel from "./ui/form-config-panel.ui";
 import PDFFiller from "./ui/PDFFiller";
-import {FormFieldBox, FormFieldSetting, PDFSettingData, CustomerAttributeData} from "./types/pdf-setting.type";
+import {FormFieldBox, FormFieldSetting, PDFSettingData, CustomerAttributeData, ToolSettingConfig} from "./types/pdf-setting.type";
 import {PDFSettingService} from "./services/pdf-setting.service";
 import {Col, Row} from 'antd';
 
@@ -13,10 +13,11 @@ interface IProps {
   attributes?: CustomerAttributeData[];
   onSaveSetting: (data: PDFSettingData) => void;
   onChangeSetting: (data: PDFSettingData) => void;
+  config?: ToolSettingConfig;
 }
 
 function PDFSettingPage(props: IProps) {
-  const {pdfUrl, settingData, onSaveSetting, onChangeSetting, attributes} = props;
+  const {pdfUrl, settingData, onSaveSetting, onChangeSetting, attributes, config} = props;
   const [pageActive, setPageActive] = useState<number>(0);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [formFields, setFormFields] = useState<FormFieldSetting[]>([]);
@@ -157,9 +158,11 @@ function PDFSettingPage(props: IProps) {
               onPDFLoad={handlePDFLoad}
               onUpdateBoxField={handleUpdateBoxField}
               onDeleteField={handleDeleteField}
+              config={config}
             />
           </div>
         </Col>
+        
         <Col xs={24} xl={12} xxl={8}>
           <div className="pdf-config-container">
             <FormConfigPanel
@@ -174,9 +177,10 @@ function PDFSettingPage(props: IProps) {
               onLoadPDFWithConfig={handleLoadPDFWithConfig}
               onSaveSetting={onSaveSetting}
               attributes={attributes}
+              config={config}
             />
             
-            {1 < 0 && (
+            {config?.enablePDFFillerToolBox && (
               <PDFFiller
                 pdfFile={pdfFile}
                 formFields={formFields}
@@ -188,8 +192,6 @@ function PDFSettingPage(props: IProps) {
           </div>
         </Col>
       </Row>
-    
-    
     </div>
   );
 }

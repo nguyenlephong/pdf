@@ -394,7 +394,13 @@ export const router = createBrowserRouter([
           }}
           onChangeSetting={function (data: PDFSettingData): void {
             console.log(`👨‍🎓 PhongNguyen 🎯 routes.tsx 👉 onchange data 📝:`, data)
-          }} />,
+          }}
+          config={{
+            enablePDFFillerToolBox: true,
+            enableExportToolBox: true,
+            enablePDFViewerToolBar: true
+          }}
+        />,
       },
       {
         path: "*",

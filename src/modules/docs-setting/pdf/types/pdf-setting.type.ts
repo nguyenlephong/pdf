@@ -45,3 +45,9 @@ export type FormFieldBox = {
   width: number;
   height: number;
 }
+
+export interface ToolSettingConfig {
+  enableExportToolBox?: boolean;
+  enablePDFViewerToolBar?: boolean;
+  enablePDFFillerToolBox?: boolean;
+}

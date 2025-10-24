@@ -1,7 +1,7 @@
 import React, {useCallback, useRef, useState} from "react";
 import {Document, Page, pdfjs} from "react-pdf";
 import {useDropzone} from "react-dropzone";
-import {FormFieldBox, FormFieldSetting} from "../types/pdf-setting.type";
+import {FormFieldBox, FormFieldSetting, ToolSettingConfig} from "../types/pdf-setting.type";
 import FormFieldOverlay from "./form-field-overlay.ui";
 import {DndContext, DragEndEvent} from "@dnd-kit/core";
 import {Button, Col, Input, Row} from "antd";
@@ -13,6 +13,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 ).toString();
 
 interface PDFViewerProps {
+  config?: ToolSettingConfig;
   pdfFile: File | null;
   setPageActive: (page: number) => void;
   formFields: FormFieldSetting[];
@@ -35,6 +36,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
     onPDFLoad,
     onUpdateBoxField,
     onDeleteField,
+    config,
   } = props;
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
@@ -487,7 +489,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
   
   return (
     <Row className="pdf-viewer" gutter={[12, 12]}>
-      {1 < 0 && (
+      {config?.enablePDFViewerToolBar && (
         <Col xs={24}>
           <div className="pdf-controls">
             
