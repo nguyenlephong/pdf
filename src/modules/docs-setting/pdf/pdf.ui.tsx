@@ -12,10 +12,11 @@ interface IProps {
   settingData?: PDFSettingData;
   attributes?: CustomerAttributeData[];
   onSaveSetting: (data: PDFSettingData) => void;
+  onChangeSetting: (data: PDFSettingData) => void;
 }
 
 function PDFSettingPage(props: IProps) {
-  const {pdfUrl, settingData, onSaveSetting, attributes} = props;
+  const {pdfUrl, settingData, onSaveSetting, onChangeSetting, attributes} = props;
   const [pageActive, setPageActive] = useState<number>(0);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [formFields, setFormFields] = useState<FormFieldSetting[]>([]);
@@ -26,6 +27,10 @@ function PDFSettingPage(props: IProps) {
   }, [pdfUrl]);
   
   React.useEffect(() => {
+    if (props) console.log("PDFSettingPage received new props: ", props);
+  }, [props]);
+  
+  React.useEffect(() => {
     if (settingData) {
       const formFieldLoaded = PDFSettingService.handleLoadPDFConfig(settingData);
       setFormFields(formFieldLoaded);
@@ -33,7 +38,7 @@ function PDFSettingPage(props: IProps) {
   }, [settingData]);
   
   React.useEffect(() => {
-    if (onSaveSetting) onSaveSetting({form_fields: formFields, ts: Date.now().toString(), name: 'testing.json', version: '1.0'});
+    if (onChangeSetting) onChangeSetting({form_fields: formFields, ts: Date.now().toString(), name: 'config.json', version: '1.0'});
   }, [formFields]);
   
   const handlePDFLoad = async (input: File | string) => {
@@ -167,6 +172,7 @@ function PDFSettingPage(props: IProps) {
               onSelectField={handleSelectField}
               onImportConfig={handleImportConfig}
               onLoadPDFWithConfig={handleLoadPDFWithConfig}
+              onSaveSetting={onSaveSetting}
               attributes={attributes}
             />
             

@@ -24,7 +24,7 @@ export class PDFConfigService {
     }
   };
   
-  static async exportConfig(formFields: FormFieldSetting[]) {
+  static async exportConfig(formFields: FormFieldSetting[]): Promise<PDFSettingData> {
     try {
       const config: PDFSettingData = {
         name: "config.json",
@@ -43,9 +43,14 @@ export class PDFConfigService {
       configLink.download = "config.json";
       configLink.click();
       URL.revokeObjectURL(configUrl);
-      
+      return config;
     } catch (e) {
-      
+      return {
+        name: "config.json",
+        form_fields: [],
+        ts: new Date().toISOString(),
+        version: '1.0'
+      };
     }
   }
   /**

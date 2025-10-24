@@ -391,6 +391,9 @@ export const router = createBrowserRouter([
           ]}
           onSaveSetting={function (data: PDFSettingData): void {
             console.log(`👨‍🎓 PhongNguyen 🎯 routes.tsx 👉 setting data 📝:`, data)
+          }}
+          onChangeSetting={function (data: PDFSettingData): void {
+            console.log(`👨‍🎓 PhongNguyen 🎯 routes.tsx 👉 onchange data 📝:`, data)
           }} />,
       },
       {

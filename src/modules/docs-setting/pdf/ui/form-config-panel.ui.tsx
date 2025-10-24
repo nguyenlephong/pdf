@@ -1,5 +1,5 @@
 import React from 'react';
-import {CustomerAttributeData, FormFieldSetting} from '../types/pdf-setting.type';
+import {CustomerAttributeData, FormFieldSetting, PDFSettingData} from '../types/pdf-setting.type';
 import {PDFConfigService} from '../services/config-pdf.service';
 import {Button, Col, Row} from "antd";
 import FieldItemSettingUI from './form-field-setting.ui';
@@ -15,6 +15,7 @@ interface FormConfigPanelProps {
   onSelectField: (field: FormFieldSetting) => void;
   onImportConfig: (fields: FormFieldSetting[]) => void;
   onLoadPDFWithConfig: (pdfFile: File, formFields: FormFieldSetting[]) => void;
+  onSaveSetting: (setting: PDFSettingData) => void;
 }
 
 const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
@@ -26,7 +27,8 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
     pageActive,
     onUpdateField,
     onImportConfig,
-    onLoadPDFWithConfig
+    onLoadPDFWithConfig,
+    onSaveSetting
   } = props;
   
   const childRefs = React.useRef<Record<string, { save: () => any }>>({});
@@ -48,9 +50,9 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
       console.log("❌ Please fix errors in form fields before saving.");
       return;
     }
-    console.log("✅ Parent collected all:", results);
     
-    await PDFConfigService.exportConfig(formFields);
+    let configExport = await PDFConfigService.exportConfig(formFields);
+    onSaveSetting(configExport);
   };
   
   
