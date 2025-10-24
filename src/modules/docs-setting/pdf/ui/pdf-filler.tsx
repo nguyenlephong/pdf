@@ -1,8 +1,8 @@
 import React, {useState} from 'react';
 import {PDFFormData} from '../types/form-field.type';
 import {PDFSettingService} from "../services/pdf-setting.service";
-import {PDFService} from '../services/pdf.service';
 import {FormFieldSetting} from "../types/pdf-setting.type";
+import {Box, Button, TextField, Typography} from "@mui/material";
 
 interface PDFFillerProps {
   pdfFile: File | null;
@@ -10,7 +10,7 @@ interface PDFFillerProps {
   onPDFGenerated: (pdfBytes: Uint8Array) => void;
 }
 
-const PDFFiller: React.FC<PDFFillerProps> = ({
+const PdfFiller: React.FC<PDFFillerProps> = ({
   pdfFile,
   formFields,
   onPDFGenerated
@@ -69,26 +69,6 @@ const PDFFiller: React.FC<PDFFillerProps> = ({
     }
   };
 
-  //@ts-ignore
-  const downloadFormPDF = async () => {
-    if (!pdfFile || formFields.length === 0) {
-      alert('Please load a PDF and add form fields first');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const pdfWithForm = await PDFService.generatePDFWithForm(pdfFile, formFields);
-      onPDFGenerated(pdfWithForm);
-      PDFService.downloadPDF(pdfWithForm, 'form-template.pdf');
-    } catch (error) {
-      console.error('Error generating form PDF:', error);
-      alert('Error generating PDF. Please check the console for details.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   if (formFields.length === 0) {
     return (
       <div className="config-section">
@@ -99,18 +79,13 @@ const PDFFiller: React.FC<PDFFillerProps> = ({
   }
 
   return (
-    <div className="config-section">
+    <Box className="config-section">
       <h3>Fill PDF Form</h3>
       
       <div className="form-group">
-        <button 
-          className="button"
-          onClick={loadSampleData}
-        >
+        <Button onClick={loadSampleData} variant={'contained'}>
           Load Sample Data
-        </button>
-        
-    
+        </Button>
       </div>
 
       <div className="form-group">
@@ -119,7 +94,7 @@ const PDFFiller: React.FC<PDFFillerProps> = ({
             type="checkbox"
             checked={flattenForm}
             onChange={(e) => setFlattenForm(e.target.checked)}
-            style={{ marginRight: '5px' }}
+            style={{ marginRight: '5px', width: 40 }}
           />
           <span>
             <strong>Flatten form fields</strong> - Remove borders and keep only text content
@@ -131,31 +106,17 @@ const PDFFiller: React.FC<PDFFillerProps> = ({
         </label>
       </div>
 
-      {formFields.map(field => (
-        <div key={field.id} className="form-group">
-          <label>
-            {field.label} {field.required && <span style={{color: 'red'}}>*</span>}
-          </label>
-          <input
-            type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
-            value={formData[field.name] || ''}
-            onChange={(e) => handleFieldChange(field.name, e.target.value)}
-            placeholder={field.placeholder}
-            required={field.required}
-            style={{ width: '100%' }}
-          />
-        </div>
-      ))}
+      <DynamicForm formData={formData} formFields={formFields} handleFieldChange={handleFieldChange} />
 
       <div className="form-group">
-        <button 
-          className="button success"
+        <Button
           onClick={generateFilledPDF}
           disabled={isLoading}
+          variant={'outlined'}
         >
           {isLoading ? 'Generating...' : 
            flattenForm ? 'Generate Filled PDF (No Borders)' : 'Generate Filled PDF (With Borders)'}
-        </button>
+        </Button>
       </div>
 
       {Object.keys(formData).length > 0 && (
@@ -173,8 +134,44 @@ const PDFFiller: React.FC<PDFFillerProps> = ({
           </pre>
         </div>
       )}
-    </div>
+    </Box>
   );
 };
 
-export default PDFFiller;
+export default PdfFiller;
+
+interface DynamicFormProps {
+  formFields: FormFieldSetting[];
+  formData: Record<string, any>;
+  handleFieldChange: (name: string, value: any) => void;
+}
+
+const DynamicForm: React.FC<DynamicFormProps> = ({ formFields, formData, handleFieldChange }) => {
+  return (
+    <>
+      {formFields.map((field) => (
+        <Box key={field.id} sx={{ mb: 2 }}>
+          <Typography variant="body1" sx={{ mb: 0.5 }}>
+            {field.label}{' '}
+            {field.required && (
+              <Typography component="span" color="error">
+                *
+              </Typography>
+            )}
+          </Typography>
+          
+          <TextField
+            fullWidth
+            type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
+            value={formData[field.id] || ''}
+            onChange={(e) => handleFieldChange(field.id, e.target.value)}
+            placeholder={field.placeholder}
+            required={field.required}
+            size="small"
+            variant="outlined"
+          />
+        </Box>
+      ))}
+    </>
+  );
+};

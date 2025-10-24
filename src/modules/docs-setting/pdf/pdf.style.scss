@@ -1,5 +1,4 @@
 .mfe-pdf-setting-page {
-  text-align: center;
   display: flex;
   flex-direction: column;
   padding: 24px;
@@ -349,7 +348,6 @@ h3, p {
 
 .form-group input,
 .form-group select {
-  width: 100%;
   padding: 8px;
   border: 1px solid #ddd;
   border-radius: 4px;
@@ -360,53 +358,6 @@ h3, p {
   width: 50px;
   height: 35px;
   padding: 2px;
-}
-
-.button {
-  background-color: #007bff;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  margin-right: 10px;
-  margin-bottom: 10px;
-  transition: background-color 0.2s ease;
-  white-space: nowrap;
-}
-
-.button:hover {
-  background-color: #0056b3;
-}
-
-.button:disabled {
-  background-color: #6c757d;
-  cursor: not-allowed;
-}
-
-.button.danger {
-  background-color: #dc3545;
-}
-
-.button.danger:hover {
-  background-color: #c82333;
-}
-
-.button.success {
-  background-color: #28a745;
-}
-
-.button.success:hover {
-  background-color: #218838;
-}
-
-.button.secondary {
-  background-color: #6c757d;
-}
-
-.button.secondary:hover {
-  background-color: #545b62;
 }
 
 .fields-list {

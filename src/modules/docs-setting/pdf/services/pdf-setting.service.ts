@@ -12,7 +12,18 @@ export class PDFSettingService {
   ): Promise<Uint8Array> {
     try {
       // Load the original PDF
-      const existingPdfBytes = await originalPdfFile.arrayBuffer();
+      let existingPdfBytes: ArrayBuffer;
+      console.log(`👨‍🎓 PhongNguyen 🎯 pdf.service.ts 👉 generatePDFWithForm 📝:`, originalPdfFile)
+      
+      // @ts-ignore ✅ If input is a CDN URL
+      if (originalPdfFile?.url) {
+        // @ts-ignore 
+        const response = await fetch(originalPdfFile?.url);
+        if (!response.ok) throw new Error(`Failed to load PDF from URL: ${originalPdfFile}`);
+        existingPdfBytes = await response.arrayBuffer();
+      }
+      else existingPdfBytes = await originalPdfFile.arrayBuffer();
+      
       const pdfDoc = await PDFDocument.load(existingPdfBytes);
       
       // Get the form from the PDF
@@ -31,12 +42,14 @@ export class PDFSettingService {
       const pages = pdfDoc.getPages();
       
       formFields.forEach(field => {
+        console.log(`👨‍🎓 PhongNguyen 🎯 pdf-setting.service.ts 👉  📝:`, field, field.meta.name)
+        
         // Get the page based on page number (0-based index)
-        const pageIndex = Math.max(0, Math.min(field.pageNumber - 1, pages.length - 1));
+        const pageIndex = Math.max(0, Math.min(field.page_number - 1, pages.length - 1));
         const page = pages[pageIndex]; 
         
         // Create text field
-        const textField = form.createTextField(field.meta.name);
+        const textField = form.createTextField(field.id);
         
         // Set field properties
         textField.setText(field.meta.placeholder || '');
@@ -53,25 +66,10 @@ export class PDFSettingService {
           borderWidth: 1,
         });
 
-        // Set field properties based on type
-        // switch (field.type) {
-        //   case 'date':
-        //     textField.setPlaceholder('YYYY-MM-DD');
-        //     break;
-        //   case 'email':
-        //     textField.setPlaceholder('example@email.com');
-        //     break;
-        //   case 'number':
-        //     textField.setPlaceholder('Enter number');
-        //     break;
-        //   default:
-        //     textField.setPlaceholder(field.placeholder || 'Enter text');
-        // }
       });
 
       // Save the PDF
-      const pdfBytes = await pdfDoc.save();
-      return pdfBytes;
+      return await pdfDoc.save();
     } catch (error) {
       console.error('Error generating PDF with form:', error);
       throw error;

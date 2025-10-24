@@ -2,7 +2,7 @@ import React, {useState} from "react";
 import "./pdf.style.scss";
 import PDFViewer from "./ui/pdf-viewer.ui";
 import FormConfigPanel from "./ui/form-config-panel.ui";
-import PDFFiller from "./ui/PDFFiller";
+import PDFFiller from "./ui/pdf-filler";
 import {FormFieldBox, FormFieldSetting, PDFSettingData, CustomerAttributeData, ToolSettingConfig} from "./types/pdf-setting.type";
 import {PDFSettingService} from "./services/pdf-setting.service";
 import {Col, Row} from 'antd';
