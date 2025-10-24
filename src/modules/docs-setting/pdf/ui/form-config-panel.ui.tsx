@@ -58,7 +58,7 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
     <div className="pdf-config-panel">
       <div className={'f-between'}>
         <h1>Chọn vị trí và cấu hình điền</h1>
-        <Button onClick={handleSaveAll}>Save</Button>
+        {formFields.length > 0 && <Button onClick={handleSaveAll} variant="filled">Save</Button>}
       </div>
       <Row gutter={[12, 12]}>
         {formFields

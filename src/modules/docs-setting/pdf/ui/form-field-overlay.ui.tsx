@@ -162,7 +162,7 @@ const FormFieldOverlayUi: React.FC<FormFieldOverlayProps> = (props) => {
       boxSizing: "border-box",
       display: "flex",
       alignItems: "flex-start",
-      maxHeight: 24
+      maxHeight: 24,
     }),
     [isSelected, isDragOver]
   );
@@ -206,7 +206,6 @@ const FormFieldOverlayUi: React.FC<FormFieldOverlayProps> = (props) => {
     }
     : false
   
-  
   return (
     <div
       ref={setNodeRef}
@@ -218,8 +217,11 @@ const FormFieldOverlayUi: React.FC<FormFieldOverlayProps> = (props) => {
           width: currentWidth * scale,
           height: currentHeight * scale,
         }}
+        //@ts-ignore
+        id={'pdf_field-resizable-box-' + field.id}
         minWidth={50 * scale}
         minHeight={20 * scale}
+        maxHeight={24}
         enable={enableResize}
         onResizeStart={handleResizeStart}
         onResize={handleResize}
@@ -236,7 +238,7 @@ const FormFieldOverlayUi: React.FC<FormFieldOverlayProps> = (props) => {
             height: "100%",
             cursor: "move",
             position: "relative",
-            paddingRight: 8
+            paddingRight: 8,
           }}
           className={'f-end'}
         >
