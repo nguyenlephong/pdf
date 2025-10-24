@@ -1,10 +1,11 @@
-import React, {useCallback, useRef, useState} from "react";
-import {Document, Page, pdfjs} from "react-pdf";
-import {useDropzone} from "react-dropzone";
-import {FormFieldBox, FormFieldSetting, ToolSettingConfig} from "../types/pdf-setting.type";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Document, Page, pdfjs } from "react-pdf";
+import { useDropzone } from "react-dropzone";
+import { FormFieldBox, FormFieldSetting, ToolSettingConfig } from "../types/pdf-setting.type";
 import FormFieldOverlay from "./form-field-overlay.ui";
-import {DndContext, DragEndEvent} from "@dnd-kit/core";
-import {KeyboardArrowLeft, KeyboardArrowRight} from '@mui/icons-material';
+import { DndContext, DragEndEvent } from "@dnd-kit/core";
+import debounce from "lodash.debounce";
+import { KeyboardArrowLeft, KeyboardArrowRight } from "@mui/icons-material";
 import {
   Box,
   Button,
@@ -15,10 +16,11 @@ import {
   InputLabel,
   MenuItem,
   Select,
-  SelectChangeEvent, Stack,
+  SelectChangeEvent,
+  Stack,
   TextField,
-  Typography
-} from '@mui/material';
+  Typography,
+} from "@mui/material";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -38,6 +40,8 @@ interface PDFViewerProps {
   onDeleteField: (fieldId: string) => void;
 }
 
+type DragOverlapBehavior = "snap" | "return";
+
 const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
   const {
     pdfFile,
@@ -51,30 +55,136 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
     onDeleteField,
     config,
   } = props;
+  
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
-  const [scale, setScale] = useState<number>(1.0);
+  
+  // Kích thước "tự nhiên" (viewport scale=1) của trang PDF
+  const [naturalWidth, setNaturalWidth] = useState<number>(0);
+  const [naturalHeight, setNaturalHeight] = useState<number>(0);
+  
+  // Width dùng để render canvas (tăng thì re-render, giảm dùng CSS scale để mượt)
+  const [renderWidth, setRenderWidth] = useState<number>(0);
+  // CSS scale để khớp với targetWidth hiện tại
+  const [cssScale, setCssScale] = useState<number>(1);
+  
+  // Width thực tế của container (theo layout) đo bằng ResizeObserver
+  const [targetWidth, setTargetWidth] = useState<number>(0);
+  
   const [snapToGrid, setSnapToGrid] = useState<boolean>(false);
   const [gridSize, setGridSize] = useState<number>(10);
   const [_fieldCounter, setFieldCounter] = useState<number>(0);
-  const [dragOverlapBehavior, setDragOverlapBehavior] = useState<'snap' | 'return'>('return');
+  const [dragOverlapBehavior, setDragOverlapBehavior] = useState<"snap" | "return">("return");
   const [dragOverField, setDragOverField] = useState<string | null>(null);
-  const pageRef = useRef<HTMLDivElement>(null);
   
-  React.useEffect(() => {
-    const wrappers = document.querySelectorAll('#pdf-page-thumbnails .pdf-thumbnail-wrapper');
+  const pageContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Scale hiệu dụng hiện tại (pixel trên mỗi "đơn vị tọa độ PDF" mà bạn đang dùng cho box)
+  const effectiveScale = useMemo(() => {
+    if (!naturalWidth || !renderWidth) return 1;
+    return (renderWidth * cssScale) / naturalWidth;
+  }, [naturalWidth, renderWidth, cssScale]);
+  
+  // Chiều cao hiển thị (container) sau khi scale
+  const baseHeight = useMemo(() => {
+    if (!naturalWidth || !naturalHeight || !renderWidth) return 0;
+    return (naturalHeight / naturalWidth) * renderWidth;
+  }, [naturalWidth, naturalHeight, renderWidth]);
+  
+  const displayHeight = useMemo(() => baseHeight * cssScale, [baseHeight, cssScale]);
+  
+  // Quan sát width của container để tính targetWidth
+  useEffect(() => {
+    const el = pageContainerRef.current;
+    if (!el) return;
+    
+    let rafId: number | null = null;
+    const ro = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      const next = Math.floor(entry.contentRect.width);
+      if (next <= 0) return;
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => setTargetWidth(next));
+    });
+    ro.observe(el);
+    
+    // Set ban đầu
+    setTargetWidth(Math.floor(el.clientWidth));
+    
+    return () => {
+      ro.disconnect();
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, []);
+  
+  // Tối ưu re-render khi resize:
+  // - Luôn cập nhật cssScale để khớp targetWidth
+  // - Khi phóng to, chỉ re-render canvas (setRenderWidth) sau 180ms không đổi, giúp mượt và nét
+  const growTimerRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!naturalWidth || !targetWidth) return;
+    
+    if (!renderWidth) {
+      setRenderWidth(targetWidth);
+      setCssScale(1);
+      return;
+    }
+    
+    // Cập nhật cssScale theo ratio giữa targetWidth và renderWidth
+    // (kể cả khi lớn hơn để canvas blur một chút trong lúc kéo resize)
+    const nextCssScale = targetWidth / renderWidth;
+    if (nextCssScale !== cssScale) {
+      setCssScale(nextCssScale);
+    }
+    
+    // Nếu đang phóng to (targetWidth > renderWidth), debounce re-render canvas
+    if (targetWidth > renderWidth) {
+      if (growTimerRef.current) window.clearTimeout(growTimerRef.current);
+      growTimerRef.current = window.setTimeout(() => {
+        setRenderWidth(targetWidth);
+        setCssScale(1);
+        growTimerRef.current = null;
+      }, 180);
+    } else {
+      // Khi thu nhỏ thì không cần re-render canvas, hủy hẹn nếu có
+      if (growTimerRef.current) {
+        window.clearTimeout(growTimerRef.current);
+        growTimerRef.current = null;
+      }
+    }
+  }, [targetWidth, naturalWidth, renderWidth, cssScale]);
+  
+  useEffect(() => {
+    const wrappers = document.querySelectorAll("#pdf-page-thumbnails .pdf-thumbnail-wrapper");
     wrappers.forEach((el, index) => {
-      if (index + 1 === pageNumber) el.classList.add('active');
-      else el.classList.remove('active');
+      if (index + 1 === pageNumber) el.classList.add("active");
+      else el.classList.remove("active");
     });
   }, [pageNumber]);
   
-  React.useEffect(() => {
+  useEffect(() => {
     if (pdfFile) renderThumbnails(pdfFile).then();
-  }, [pdfFile])
+  }, [pdfFile]);
+  
+  // Lấy kích thước tự nhiên của Page (scale=1)
+  const handlePageLoad = useCallback((pageProxy: any) => {
+    try {
+      const viewport = pageProxy.getViewport({ scale: 1 });
+      setNaturalWidth(viewport.width);
+      setNaturalHeight(viewport.height);
+      // Reset renderWidth theo targetWidth hiện tại để khi đổi trang vẫn sắc nét
+      if (targetWidth > 0) {
+        setRenderWidth(targetWidth);
+        setCssScale(1);
+      }
+    } catch {
+      // Fallback nếu lỗi
+      if (!naturalWidth) setNaturalWidth(pageProxy?.viewport?.width || 0);
+      if (!naturalHeight) setNaturalHeight(pageProxy?.viewport?.height || 0);
+    }
+  }, [targetWidth, naturalWidth, naturalHeight]);
   
   const handleDragStart = (event: any) => {
-    // Select the field when starting to drag
     const field = formFields.find((f) => f.id === event.active.id);
     if (field) {
       onSelectField(field);
@@ -82,11 +192,10 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
   };
   
   const handleDragMove = (event: any) => {
-    // Detect which field is being dragged over
     if (event.delta) {
       const field = formFields.find((f) => f.id === event.active.id);
       if (field) {
-        const fieldScale = event.active.data.current?.scale || scale;
+        const fieldScale = event.active.data.current?.scale || effectiveScale;
         const newX = field.box.x + event.delta.x / fieldScale;
         const newY = field.box.y + event.delta.y / fieldScale;
         
@@ -97,7 +206,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
   };
   
   const handleDragEnd = (event: DragEndEvent) => {
-    const {active, delta} = event;
+    const { active, delta } = event;
     const fieldData = active.data.current;
     if (fieldData && delta) {
       const field = fieldData.field;
@@ -108,40 +217,29 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
       let newX = field.box.x + delta.x / fieldScale;
       let newY = field.box.y + delta.y / fieldScale;
       
-      // Apply snap to grid if needed
       if (fieldSnapToGrid) {
         newX = Math.round(newX / fieldGridSize) * fieldGridSize;
         newY = Math.round(newY / fieldGridSize) * fieldGridSize;
       }
       
-      // Ensure position is not negative
       newX = Math.max(0, newX);
       newY = Math.max(0, newY);
       
-      // Check for overlap at new position
-      const hasOverlap = checkForOverlap(
-        newX,
-        newY,
-        field.box.width,
-        field.box.height,
-        field.id
-      );
+      const hasOverlap = checkForOverlap(newX, newY, field.box.width, field.box.height, field.id);
       
       if (!hasOverlap) {
-        onUpdateBoxField(field.id, {x: newX, y: newY});
+        onUpdateBoxField(field.id, { x: newX, y: newY });
       } else {
-        if (dragOverlapBehavior === 'snap') {
-          // Find a non-overlapping position near the target
-          const {x: finalX, y: finalY} = findNonOverlappingPosition(
+        if (dragOverlapBehavior === "snap") {
+          const { x: finalX, y: finalY } = findNonOverlappingPosition(
             newX,
             newY,
             field.box.width,
             field.box.height
           );
-          onUpdateBoxField(field.id, {x: finalX, y: finalY});
+          onUpdateBoxField(field.id, { x: finalX, y: finalY });
           console.log("Field snapped to avoid overlap");
         } else {
-          // Return to original position
           console.log("Cannot move field - would cause overlap, returning to original position");
         }
       }
@@ -154,10 +252,9 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
     setDragOverField(null);
   };
   
-  // Function to detect which field is being dragged over
   const getFieldUnderDrag = useCallback(
     (x: number, y: number, excludeFieldId?: string): string | null => {
-      const currentField = {x, y, width: 0, height: 0, pageNumber};
+      const currentField = { x, y, width: 0, height: 0, pageNumber };
       
       for (const field of formFields) {
         if (field.id === excludeFieldId || field.page_number !== pageNumber) {
@@ -180,16 +277,9 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
     [formFields, pageNumber]
   );
   
-  // Function to check if a position would cause overlap with existing fields
   const checkForOverlap = useCallback(
-    (
-      x: number,
-      y: number,
-      width: number,
-      height: number,
-      excludeFieldId?: string
-    ): boolean => {
-      const currentField = {x, y, width, height, pageNumber};
+    (x: number, y: number, width: number, height: number, excludeFieldId?: string): boolean => {
+      const currentField = { x, y, width, height, pageNumber };
       
       return formFields.some((field) => {
         if (field.id === excludeFieldId || field.page_number !== pageNumber) {
@@ -207,19 +297,12 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
     [formFields, pageNumber]
   );
   
-  // Function to find a non-overlapping position near the clicked position
   const findNonOverlappingPosition = useCallback(
-    (
-      x: number,
-      y: number,
-      width: number,
-      height: number
-    ): { x: number; y: number } => {
+    (x: number, y: number, width: number, height: number): { x: number; y: number } => {
       if (!checkForOverlap(x, y, width, height)) {
-        return {x, y};
+        return { x, y };
       }
       
-      // Try positions in a spiral pattern around the clicked point
       const step = 20;
       for (let radius = step; radius <= 200; radius += step) {
         for (let angle = 0; angle < 360; angle += 45) {
@@ -227,22 +310,20 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
           const newX = x + radius * Math.cos(radians);
           const newY = y + radius * Math.sin(radians);
           
-          // Ensure position is within reasonable bounds
           if (newX >= 0 && newY >= 0) {
             if (!checkForOverlap(newX, newY, width, height)) {
-              return {x: newX, y: newY};
+              return { x: newX, y: newY };
             }
           }
         }
       }
       
-      // If no position found, return original position with warning
-      return {x, y};
+      return { x, y };
     },
     [checkForOverlap]
   );
   
-  const onDocumentLoadSuccess = ({numPages}: { numPages: number }) => {
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
   };
   
@@ -252,7 +333,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
         const file = acceptedFiles[0];
         if (file.type === "application/pdf") {
           onPDFLoad(file);
-          setFieldCounter(0); // Reset counter when new PDF is loaded
+          setFieldCounter(0);
           renderThumbnails(file).then();
         }
       }
@@ -260,7 +341,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
     [onPDFLoad]
   );
   
-  const {getRootProps, getInputProps, isDragActive} = useDropzone({
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
       "application/pdf": [".pdf"],
@@ -269,19 +350,13 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
   });
   
   const handlePageClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    // Deselect field when clicking on empty area
     const target = event.target as HTMLElement;
-    if (
-      target.classList.contains("react-pdf__Page") ||
-      target.classList.contains("pdf-page")
-    ) {
+    if (target.classList.contains("react-pdf__Page") || target.classList.contains("pdf-page")) {
       onSelectField(null);
     }
   };
   
-  // HTML5 drag and drop: drop a toolbox item onto the page to create a field
   const handlePageDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-    // Allow drop when dragging our toolbox items
     if (event.dataTransfer.types.includes("application/x-field-type")) {
       event.preventDefault();
     }
@@ -299,35 +374,27 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
     const baseWidth = 150;
     const baseHeight = 30;
     
-    let dropX = x / scale;
-    let dropY = y / scale;
+    // Chuyển vị trí screen px -> tọa độ PDF unit
+    let dropX = x / effectiveScale;
+    let dropY = y / effectiveScale;
     
-    // Snap to grid if enabled
     if (snapToGrid) {
       dropX = Math.round(dropX / gridSize) * gridSize;
       dropY = Math.round(dropY / gridSize) * gridSize;
     }
     
-    const {x: finalX, y: finalY} = findNonOverlappingPosition(
-      dropX,
-      dropY,
-      baseWidth,
-      baseHeight
-    );
+    const { x: finalX, y: finalY } = findNonOverlappingPosition(dropX, dropY, baseWidth, baseHeight);
     
-    // Narrow allowed types
-    const allowedTypes: Array<FormFieldSetting['type']> = ["text", "date", "number", "email"];
-    const fieldType: FormFieldSetting['type'] = (allowedTypes.includes(rawType as any)
-      ? (rawType as FormFieldSetting['type'])
-      : "text");
+    const allowedTypes: Array<FormFieldSetting["type"]> = ["text", "date", "number", "email"];
+    const fieldType: FormFieldSetting["type"] = allowedTypes.includes(rawType as any)
+      ? (rawType as FormFieldSetting["type"])
+      : "text";
     
     const newField: FormFieldSetting = {
       id: `field_${Date.now()}`,
       font_size: 16,
       color: "#000000",
-      
       box: {
-        
         x: finalX,
         y: finalY,
         width: baseWidth,
@@ -341,9 +408,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
         placeholder: "",
         ts: Date.now(),
       },
-      
       position: -1,
-      
       page_number: pageNumber,
     };
     
@@ -352,32 +417,18 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
   };
   
   const handleFieldSelect = (field: FormFieldSetting, event?: React.MouseEvent) => {
-    if (event) {
-      event.stopPropagation();
-    }
+    if (event) event.stopPropagation();
     onSelectField(field);
   };
   
-  const handleFieldResize = (
-    fieldId: string,
-    newWidth: number,
-    newHeight: number
-  ) => {
+  const handleFieldResize = (fieldId: string, newWidth: number, newHeight: number) => {
     const field = formFields.find((f) => f.id === fieldId);
     if (!field) return;
     
-    // Check for overlap at new size
-    const hasOverlap = checkForOverlap(
-      field.box.x,
-      field.box.y,
-      newWidth,
-      newHeight,
-      fieldId
-    );
+    const hasOverlap = checkForOverlap(field.box.x, field.box.y, newWidth, newHeight, fieldId);
     
-    // Only update if there's no overlap
     if (!hasOverlap) {
-      onUpdateBoxField(fieldId, {width: newWidth, height: newHeight});
+      onUpdateBoxField(fieldId, { width: newWidth, height: newHeight });
     } else {
       console.log("Cannot resize field - would cause overlap");
     }
@@ -387,25 +438,17 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
     const field = formFields.find((f) => f.id === fieldId);
     if (!field) return;
     
-    // Check for overlap at new position
-    const hasOverlap = checkForOverlap(
-      newX,
-      newY,
-      field.box.width,
-      field.box.height,
-      fieldId
-    );
+    const hasOverlap = checkForOverlap(newX, newY, field.box.width, field.box.height, fieldId);
     
-    // Only update if there's no overlap
     if (!hasOverlap) {
-      onUpdateBoxField(fieldId, {x: newX, y: newY});
+      onUpdateBoxField(fieldId, { x: newX, y: newY });
     }
   };
   
   const handleFieldDelete = (fieldId: string, event: React.MouseEvent) => {
     event.stopPropagation();
     event.preventDefault();
-    console.log("PDFViewer: Deleting field:", fieldId); // For debugging
+    console.log("PDFViewer: Deleting field:", fieldId);
     onDeleteField(fieldId);
     if (selectedField?.id === fieldId) {
       onSelectField(null);
@@ -413,46 +456,45 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
   };
   
   const renderThumbnails = async (file: File) => {
-    
-    const container = document.getElementById('pdf-page-thumbnails');
+    const container = document.getElementById("pdf-page-thumbnails");
     if (!container) return;
-    container.innerHTML = '';
+    container.innerHTML = "";
     
-    let url = null;
+    let url: string | null = null;
     try {
-      url = URL.createObjectURL(file)
+      url = URL.createObjectURL(file);
     } catch (e) {
       // @ts-ignore
-      url = file?.['url']! || '';
+      url = file?.["url"]! || "";
     }
-    const pdf = await pdfjs.getDocument(url).promise;
+    const pdf = await pdfjs.getDocument(url as any).promise;
     
     const scale = 0.2;
     
     const fragment = document.createDocumentFragment();
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
-      const viewport = page.getViewport({scale});
+      const viewport = page.getViewport({ scale });
       
-      const wrapper = document.createElement('div');
-      wrapper.className = 'pdf-thumbnail-wrapper';
-      if (pageNumber === i) wrapper.classList.add('active');
+      const wrapper = document.createElement("div");
+      wrapper.className = "pdf-thumbnail-wrapper";
+      if (pageNumber === i) wrapper.classList.add("active");
       
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d')!;
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d")!;
       canvas.width = viewport.width;
       canvas.height = viewport.height;
       
-      //@ts-ignore
-      await page.render({canvasContext: context, viewport}).promise;
+      // @ts-ignore
+      await page.render({ canvasContext: context, viewport }).promise;
       
-      canvas.addEventListener('click', () => {
+      canvas.addEventListener("click", () => {
         document
-          .querySelectorAll('#pdf-page-thumbnails .pdf-thumbnail-wrapper')
-          .forEach((el) => el.classList.remove('active'));
+          .querySelectorAll("#pdf-page-thumbnails .pdf-thumbnail-wrapper")
+          .forEach((el) => el.classList.remove("active"));
         
-        wrapper.classList.add('active');
-        wrapper.scrollIntoView({behavior: 'smooth', inline: 'center'});
+        wrapper.classList.add("active");
+        wrapper.scrollIntoView({ behavior: "smooth", inline: "center" });
         setPageNumber(i);
         setPageActive(i);
       });
@@ -464,7 +506,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
     container.appendChild(fragment);
     
     URL.revokeObjectURL(url);
-  }
+  };
   
   if (!pdfFile) {
     return (
@@ -473,10 +515,10 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
         {isDragActive ? (
           <p>Drop the PDF file here...</p>
         ) : (
-          <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px'}}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
             <p>Drag & drop a PDF file here, or click to select</p>
             <Button
-              variant={'outlined'}
+              variant={"outlined"}
               onClick={(e) => {
                 e.stopPropagation();
                 const input = document.createElement("input");
@@ -499,20 +541,18 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
       </div>
     );
   }
-  console.log(`👨‍🎓 PhongNguyen 🎯 pdf-viewer.ui.tsx 👉  scale 📝:`, scale)
+  
   return (
     <Stack className="pdf-viewer" spacing={0}>
       {config?.enablePDFViewerToolBar && (
         <Box>
           <div className="pdf-controls-bar">
-            
-            <div style={{display: "flex", alignItems: "center", gap: "12px"}}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <div
                 role="button"
                 draggable
                 onDragStart={(e) => {
                   e.dataTransfer.setData("application/x-field-type", "text");
-                  // Optional: set drag image
                   const img = document.createElement("div");
                   img.style.width = "120px";
                   img.style.height = "24px";
@@ -526,16 +566,14 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
                   img.textContent = "Text Field";
                   document.body.appendChild(img);
                   e.dataTransfer.setDragImage(img, 60, 12);
-                  // Remove after a tick
                   setTimeout(() => document.body.removeChild(img), 0);
                 }}
                 className="pdf-drag-box"
-                style={{cursor: "grab"}}
+                style={{ cursor: "grab" }}
               >
                 Drag: Text Field
               </div>
             </div>
-            
             
             <GridControls
               snapToGrid={snapToGrid}
@@ -549,74 +587,62 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
               setDragOverlapBehavior={setDragOverlapBehavior}
             />
             
-            {/* Debug delete button */}
             {selectedField && (
-              <div style={{display: "flex", alignItems: "center", gap: "12px"}}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                 <Button
-                  variant={'contained'}
+                  variant={"contained"}
                   className="button danger"
                   onClick={() => {
                     console.log("Debug: Deleting selected field:", selectedField.id);
-                    handleFieldDelete(selectedField.id, new MouseEvent('click') as any);
+                    handleFieldDelete(selectedField.id, new MouseEvent("click") as any);
                   }}
-                  style={{fontSize: "12px", padding: "5px 10px"}}
+                  style={{ fontSize: "12px", padding: "5px 10px" }}
                 >
                   Debug Delete Field
                 </Button>
-                <span style={{fontSize: "12px", color: "#666"}}>
-              Selected: {selectedField.label}
-            </span>
+                <span style={{ fontSize: "12px", color: "#666" }}>Selected: {selectedField.label}</span>
               </div>
             )}
             
             <div className="page-controls">
-            
-            <span>
-            Page {pageNumber} of {numPages}
-          </span>
-              <span style={{marginLeft: "10px", fontSize: "12px", color: "#666"}}>
-            ({formFields.filter((f) => f.page_number === pageNumber).length}{" "}
-                fields)
-          </span>
-            
+              <span>Page {pageNumber} of {numPages}</span>
+              <span style={{ marginLeft: "10px", fontSize: "12px", color: "#666" }}>
+                ({formFields.filter((f) => f.page_number === pageNumber).length} fields)
+              </span>
             </div>
-          
           </div>
         </Box>
       )}
       
       <Box>
-        
         <Box
           sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             gap: 2,
             p: 2,
             borderRadius: 2,
           }}
         >
-          
           <IconButton
             color="primary"
             onClick={() => {
-              setPageNumber(Math.max(1, pageNumber - 1))
+              setPageNumber(Math.max(1, pageNumber - 1));
               setPageActive(Math.max(1, pageNumber - 1));
             }}
             disabled={pageNumber <= 1}
             sx={{
-              border: '1px solid',
-              borderColor: 'divider',
-              bgcolor: 'background.paper',
-              '&:hover': {bgcolor: 'action.hover'},
+              border: "1px solid",
+              borderColor: "divider",
+              bgcolor: "background.paper",
+              "&:hover": { bgcolor: "action.hover" },
             }}
           >
-            <KeyboardArrowLeft fontSize="small"/>
+            <KeyboardArrowLeft fontSize="small" />
           </IconButton>
           
-          <Box sx={{flex: 1,}}>
-            
+          <Box sx={{ flex: 1 }}>
             <Box
               className="pdf-toolbox"
               sx={{
@@ -636,12 +662,12 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
               </Box>
               
               <Box flex={1}>
-                <DraggableInput/>
+                <DraggableInput />
               </Box>
             </Box>
             
-            
-            <Box >
+            {/* Container đo width và set chiều cao hiển thị theo scale */}
+            <Box ref={pageContainerRef}>
               <DndContext
                 onDragStart={handleDragStart}
                 onDragMove={handleDragMove}
@@ -649,7 +675,6 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
                 onDragCancel={handleDragCancel}
               >
                 <div
-                  ref={pageRef}
                   className="pdf-page"
                   onClick={handlePageClick}
                   onDragOver={handlePageDragOver}
@@ -657,60 +682,79 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
                   style={{
                     cursor: "default",
                     position: "relative",
+                    width: "100%",
+                    height: displayHeight || undefined, // Chiều cao khớp với scale để tránh nhảy layout
                   }}
                 >
-                  <Document file={pdfFile} onLoadSuccess={onDocumentLoadSuccess}>
-                    <Page
-                      pageNumber={pageNumber}
-                      scale={scale}
-                      renderTextLayer={false}
-                      renderAnnotationLayer={false}
-                    />
-                  </Document>
-                  
-                  {snapToGrid && (
-                    <div
-                      className="grid-overlay"
-                      style={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        width: "100%",
-                        height: "100%",
-                        pointerEvents: "none",
-                        backgroundImage: `
-                  linear-gradient(to right, rgba(0,0,0,0.1) 1px, transparent 1px),
-                  linear-gradient(to bottom, rgba(0,0,0,0.1) 1px, transparent 1px)
-                `,
-                        backgroundSize: `${gridSize * scale}px ${gridSize * scale}px`,
-                        zIndex: 1,
-                      }}
-                    />
-                  )}
-                  
-                  {formFields
-                    .filter((field) => field.page_number === pageNumber)
-                    .map((field) => (
-                      <FormFieldOverlay
-                        key={field.id}
-                        position={field.position}
-                        field={field}
-                        scale={scale}
-                        isSelected={selectedField?.id === field.id}
-                        isDragOver={dragOverField === field.id}
-                        onClick={(e) => handleFieldSelect(field, e)}
-                        onMove={(newX, newY) => handleFieldMove(field.id, newX, newY)}
-                        onResize={(newWidth, newHeight) =>
-                          handleFieldResize(field.id, newWidth, newHeight)
-                        }
-                        onDelete={(e) => handleFieldDelete(field.id, e)}
-                        allFields={formFields}
-                        snapToGrid={snapToGrid}
-                        gridSize={gridSize}
+                  {/* Lớp phóng to/thu nhỏ bằng CSS để mượt */}
+                  <div
+                    className="pdf-zoom-layer"
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      transform: `scale(${cssScale})`,
+                      transformOrigin: "top left",
+                      width: renderWidth, // width gốc để render canvas
+                      height: baseHeight, // height gốc tương ứng
+                    }}
+                  >
+                    <Document file={pdfFile} onLoadSuccess={onDocumentLoadSuccess}>
+                      <Page
+                        pageNumber={pageNumber}
+                        width={renderWidth}
+                        scale={1}
+                        onLoadSuccess={handlePageLoad}
+                        renderTextLayer={false}
+                        renderAnnotationLayer={false}
                       />
-                    ))}
-                  
-                  <Button variant={"outlined"} className={'pdf-page-label-btn'}>{pageNumber} / {numPages}</Button>
+                    </Document>
+                    
+                    {snapToGrid && (
+                      <div
+                        className="grid-overlay"
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          width: "100%",
+                          height: "100%",
+                          pointerEvents: "none",
+                          backgroundImage: `
+                            linear-gradient(to right, rgba(0,0,0,0.1) 1px, transparent 1px),
+                            linear-gradient(to bottom, rgba(0,0,0,0.1) 1px, transparent 1px)
+                          `,
+                          backgroundSize: `${gridSize * effectiveScale}px ${gridSize * effectiveScale}px`,
+                          zIndex: 1,
+                        }}
+                      />
+                    )}
+                    
+                    {formFields
+                      .filter((field) => field.page_number === pageNumber)
+                      .map((field) => (
+                        <FormFieldOverlay
+                          key={field.id}
+                          position={field.position}
+                          field={field}
+                          scale={effectiveScale}
+                          isSelected={selectedField?.id === field.id}
+                          isDragOver={dragOverField === field.id}
+                          onClick={(e) => handleFieldSelect(field, e)}
+                          onMove={(newX, newY) => handleFieldMove(field.id, newX, newY)}
+                          onResize={(newWidth, newHeight) =>
+                            handleFieldResize(field.id, newWidth, newHeight)
+                          }
+                          onDelete={(e) => handleFieldDelete(field.id, e)}
+                          allFields={formFields}
+                          snapToGrid={snapToGrid}
+                          gridSize={gridSize}
+                        />
+                      ))}
+                    
+                    <Button variant={"outlined"} className={"pdf-page-label-btn"}>
+                      {pageNumber} / {numPages}
+                    </Button>
+                  </div>
                 </div>
               </DndContext>
             </Box>
@@ -719,24 +763,24 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
           <IconButton
             color="primary"
             onClick={() => {
-              setPageNumber(Math.min(numPages, pageNumber + 1))
-              setPageActive(Math.min(numPages, pageNumber + 1))
+              setPageNumber(Math.min(numPages, pageNumber + 1));
+              setPageActive(Math.min(numPages, pageNumber + 1));
             }}
             disabled={pageNumber >= numPages}
             sx={{
-              border: '1px solid',
-              borderColor: 'divider',
-              bgcolor: 'background.paper',
-              '&:hover': {bgcolor: 'action.hover'},
+              border: "1px solid",
+              borderColor: "divider",
+              bgcolor: "background.paper",
+              "&:hover": { bgcolor: "action.hover" },
             }}
           >
-            <KeyboardArrowRight fontSize="small"/>
+            <KeyboardArrowRight fontSize="small" />
           </IconButton>
         </Box>
       </Box>
       
-      <Box sx={{mt: 0}} className={'f-center'}>
-        <div id="pdf-page-thumbnails" className={'pdf-pagination-list'}></div>
+      <Box sx={{ mt: 0 }}>
+        <div id="pdf-page-thumbnails" className={"pdf-pagination-list"}></div>
       </Box>
     </Stack>
   );
@@ -744,19 +788,13 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
 
 export default PdfViewerUi;
 
-
-type DragOverlapBehavior = 'snap' | 'return';
-
 interface OverlapControlProps {
   dragOverlapBehavior: DragOverlapBehavior;
   setDragOverlapBehavior: (value: DragOverlapBehavior) => void;
 }
 
 const OverlapControl: React.FC<OverlapControlProps> = (props) => {
-  const {
-    dragOverlapBehavior,
-    setDragOverlapBehavior,
-  } = props
+  const { dragOverlapBehavior, setDragOverlapBehavior } = props;
   const handleChange = (e: SelectChangeEvent<DragOverlapBehavior>) => {
     setDragOverlapBehavior(e.target.value as DragOverlapBehavior);
   };
@@ -765,7 +803,7 @@ const OverlapControl: React.FC<OverlapControlProps> = (props) => {
     <Box display="flex" alignItems="center" gap={1.5}>
       <Typography variant="body2">On Overlap:</Typography>
       
-      <FormControl size="small" sx={{minWidth: 180}}>
+      <FormControl size="small" sx={{ minWidth: 180 }}>
         <InputLabel id="overlap-select-label">Behavior</InputLabel>
         <Select
           labelId="overlap-select-label"
@@ -789,27 +827,16 @@ interface GridControlsProps {
 }
 
 const GridControls: React.FC<GridControlsProps> = (props) => {
-  const {
-    snapToGrid,
-    setSnapToGrid,
-    gridSize,
-    setGridSize,
-  } = props
+  const { snapToGrid, setSnapToGrid, gridSize, setGridSize } = props;
   return (
     <Box display="flex" alignItems="center" gap={1.5}>
-      {/* Checkbox for Snap to Grid */}
       <FormControlLabel
         control={
-          <Checkbox
-            checked={snapToGrid}
-            onChange={(e) => setSnapToGrid(e.target.checked)}
-            size="small"
-          />
+          <Checkbox checked={snapToGrid} onChange={(e) => setSnapToGrid(e.target.checked)} size="small" />
         }
         label={<Typography variant="body2">Snap to Grid</Typography>}
       />
       
-      {/* Grid Size input, visible only when snapToGrid is true */}
       {snapToGrid && (
         <Box display="flex" alignItems="center" gap={1}>
           <Typography variant="body2">Size:</Typography>
@@ -820,10 +847,10 @@ const GridControls: React.FC<GridControlsProps> = (props) => {
             inputProps={{
               min: 5,
               max: 50,
-              style: {textAlign: 'center', fontSize: 12},
+              style: { textAlign: "center", fontSize: 12 },
             }}
             size="small"
-            sx={{width: 70}}
+            sx={{ width: 70 }}
           />
         </Box>
       )}
@@ -831,23 +858,21 @@ const GridControls: React.FC<GridControlsProps> = (props) => {
   );
 };
 
-
 const DraggableInput: React.FC = () => {
   const handleDragStart = (e: React.DragEvent<HTMLInputElement>) => {
-    e.dataTransfer.setData('application/x-field-type', 'text');
+    e.dataTransfer.setData("application/x-field-type", "text");
     
-    // Create custom drag preview
-    const img = document.createElement('div');
-    img.style.width = '120px';
-    img.style.height = '24px';
-    img.style.background = '#1976d2'; // MUI primary color
-    img.style.color = 'white';
-    img.style.display = 'flex';
-    img.style.alignItems = 'center';
-    img.style.justifyContent = 'center';
-    img.style.fontSize = '12px';
-    img.style.borderRadius = '4px';
-    img.textContent = 'Text Field';
+    const img = document.createElement("div");
+    img.style.width = "120px";
+    img.style.height = "24px";
+    img.style.background = "#1976d2";
+    img.style.color = "white";
+    img.style.display = "flex";
+    img.style.alignItems = "center";
+    img.style.justifyContent = "center";
+    img.style.fontSize = "12px";
+    img.style.borderRadius = "4px";
+    img.textContent = "Text Field";
     document.body.appendChild(img);
     
     e.dataTransfer.setDragImage(img, 60, 12);
@@ -865,11 +890,10 @@ const DraggableInput: React.FC = () => {
       onDragStart={handleDragStart}
       InputProps={{
         sx: {
-          cursor: 'grab',
+          cursor: "grab",
           height: 20,
         },
       }}
     />
   );
 };
-

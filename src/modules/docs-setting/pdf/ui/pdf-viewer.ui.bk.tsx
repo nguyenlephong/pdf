@@ -4,6 +4,7 @@ import {useDropzone} from "react-dropzone";
 import {FormFieldBox, FormFieldSetting, ToolSettingConfig} from "../types/pdf-setting.type";
 import FormFieldOverlay from "./form-field-overlay.ui";
 import {DndContext, DragEndEvent} from "@dnd-kit/core";
+import debounce from 'lodash.debounce';
 import {KeyboardArrowLeft, KeyboardArrowRight} from '@mui/icons-material';
 import {
   Box,
@@ -53,13 +54,49 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
   } = props;
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
+  const [pageOriginalWidth, setPageOriginalWidth] = useState<number>(0);
   const [scale, setScale] = useState<number>(1.0);
+  const [containerWidth, setContainerWidth] = useState<number>();
   const [snapToGrid, setSnapToGrid] = useState<boolean>(false);
   const [gridSize, setGridSize] = useState<number>(10);
   const [_fieldCounter, setFieldCounter] = useState<number>(0);
   const [dragOverlapBehavior, setDragOverlapBehavior] = useState<'snap' | 'return'>('return');
   const [dragOverField, setDragOverField] = useState<string | null>(null);
   const pageRef = useRef<HTMLDivElement>(null);
+  
+  
+  // React.useEffect(() => {
+  //   if (!pageRef.current) return;
+  //  
+  //   const el = pageRef.current;
+  //  
+  //   const handleResize = debounce(() => {
+  //     const newWidth = el.offsetWidth;
+  //     setContainerWidth(newWidth);
+  //    
+  //     if (pageOriginalWidth > 0) {
+  //       // Tính tỉ lệ scale dựa vào chiều rộng gốc của trang PDF
+  //       const newScale = newWidth / pageOriginalWidth;
+  //       setScale(newScale);
+  //     }
+  //   }, 150);
+  //  
+  //   const observer = new ResizeObserver(handleResize);
+  //   observer.observe(el);
+  //  
+  //   // Set ban đầu
+  //   setContainerWidth(el.offsetWidth);
+  //   if (pageOriginalWidth > 0) {
+  //     setScale(el.offsetWidth / pageOriginalWidth);
+  //   }
+  //  
+  //   return () => {
+  //     observer.disconnect();
+  //     handleResize.cancel();
+  //   };
+  // }, [pageOriginalWidth]);
+  
+  
   
   React.useEffect(() => {
     const wrappers = document.querySelectorAll('#pdf-page-thumbnails .pdf-thumbnail-wrapper');
@@ -72,6 +109,14 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
   React.useEffect(() => {
     if (pdfFile) renderThumbnails(pdfFile).then();
   }, [pdfFile])
+  
+  const handlePageRenderSuccess = useCallback((page: any) => {
+    // page.viewport.width: chiều rộng thật của PDF page trước khi scale
+    if (pageOriginalWidth === 0) {
+      setPageOriginalWidth(page.originalWidth || page.viewport.width);
+    }
+  }, [pageOriginalWidth]);
+  
   
   const handleDragStart = (event: any) => {
     // Select the field when starting to drag
@@ -499,7 +544,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
       </div>
     );
   }
-  console.log(`👨‍🎓 PhongNguyen 🎯 pdf-viewer.ui.tsx 👉  scale 📝:`, scale)
+  
   return (
     <Stack className="pdf-viewer" spacing={0}>
       {config?.enablePDFViewerToolBar && (
@@ -615,7 +660,11 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
             <KeyboardArrowLeft fontSize="small"/>
           </IconButton>
           
-          <Box sx={{flex: 1,}}>
+          <Box
+            sx={{
+              flex: 1,
+            }}
+          >
             
             <Box
               className="pdf-toolbox"
@@ -641,7 +690,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
             </Box>
             
             
-            <Box >
+            <Box ref={pageRef}>
               <DndContext
                 onDragStart={handleDragStart}
                 onDragMove={handleDragMove}
@@ -649,7 +698,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
                 onDragCancel={handleDragCancel}
               >
                 <div
-                  ref={pageRef}
+                  
                   className="pdf-page"
                   onClick={handlePageClick}
                   onDragOver={handlePageDragOver}
@@ -661,10 +710,14 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
                 >
                   <Document file={pdfFile} onLoadSuccess={onDocumentLoadSuccess}>
                     <Page
+                      // key={containerWidth}
                       pageNumber={pageNumber}
                       scale={scale}
                       renderTextLayer={false}
                       renderAnnotationLayer={false}
+                      width={containerWidth}
+                      onRenderSuccess={handlePageRenderSuccess}
+                    
                     />
                   </Document>
                   
@@ -735,7 +788,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
         </Box>
       </Box>
       
-      <Box sx={{mt: 0}} className={'f-center'}>
+      <Box sx={{mt: 0}}>
         <div id="pdf-page-thumbnails" className={'pdf-pagination-list'}></div>
       </Box>
     </Stack>

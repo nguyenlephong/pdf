@@ -5,7 +5,7 @@ import FormConfigPanel from "./ui/form-config-panel.ui";
 import PDFFiller from "./ui/pdf-filler";
 import {FormFieldBox, FormFieldSetting, PDFSettingData, CustomerAttributeData, ToolSettingConfig} from "./types/pdf-setting.type";
 import {PDFSettingService} from "./services/pdf-setting.service";
-import {Col, Row} from 'antd';
+import {Grid} from "@mui/material";
 
 interface IProps {
   pdfUrl?: string; // CDN URL or local file path
@@ -145,8 +145,8 @@ function PDFSettingPage(props: IProps) {
   
   return (
     <div className="mfe-pdf-setting-page">
-      <Row className={"main-container"} gutter={24}>
-        <Col xs={24} xl={12} xxl={16}>
+      <Grid container className={"main-container"} rowSpacing={1}>
+        <Grid size={6}>
           <div className="pdf-container">
             <PDFViewer
               pdfFile={pdfFile}
@@ -161,9 +161,9 @@ function PDFSettingPage(props: IProps) {
               config={config}
             />
           </div>
-        </Col>
+        </Grid>
         
-        <Col xs={24} xl={12} xxl={8}>
+        <Grid size={6}>
           <div className="pdf-config-container">
             <FormConfigPanel
               selectedField={selectedField}
@@ -190,8 +190,8 @@ function PDFSettingPage(props: IProps) {
               />
             )}
           </div>
-        </Col>
-      </Row>
+        </Grid>
+      </Grid>
     </div>
   );
 }
