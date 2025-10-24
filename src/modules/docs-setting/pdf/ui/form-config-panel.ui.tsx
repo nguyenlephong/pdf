@@ -92,7 +92,8 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
             <h3>PDF Actions</h3>
             
             <Button
-              className="button success"
+              sx={{ml: 2, mt: 2}}
+              variant={'outlined'}
               onClick={async () => {
                 if (!pdfFile || formFields.length === 0) {
                   console.log('Please load a PDF and add form fields first');
@@ -112,7 +113,8 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
             </Button>
             
             <Button
-              className="button success"
+              sx={{ml: 2, mt: 2}}
+              variant={'outlined'}
               onClick={async () => {
                 if (formFields.length === 0) {
                   console.log('Please load a PDF and add form fields first');
@@ -130,7 +132,8 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
             
             
             <Button
-              className="button"
+              sx={{ml: 2, mt: 2}}
+              variant={'outlined'}
               onClick={() => {
                 const input = document.createElement('input');
                 input.type = 'file';
@@ -190,7 +193,8 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
             </Button>
             
             <Button
-              className="button"
+              sx={{ml: 2, mt: 2}}
+              variant={'outlined'}
               onClick={() => {
                 const input = document.createElement('input');
                 input.type = 'file';

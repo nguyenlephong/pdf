@@ -4,6 +4,15 @@
   padding: 24px;
 
 
+  .pdf-controls-bar {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 12px 24px;
+    border: 1px solid #d6d6d7;
+    border-radius: 8px;
+  }
+
   .pdf-page {
     //box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     border: 1px solid #6155F5;
@@ -12,9 +21,6 @@
 
     //width: fit-content;
 
-    .pdf-controls {
-
-    }
 
     .pdf-page-label-btn {
       position: absolute;
@@ -143,8 +149,9 @@
 
   display: flex;
   gap: 16px;
-  flex-wrap: wrap;
   align-items: center;
+  width: 100%;
+  
 }
 
 h3, p {
@@ -416,4 +423,11 @@ h3, p {
     width: 100%;
     height: 300px;
   }
+}
+
+.pdf-drag-box {
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background-color: #f9f9f9;
+  padding: 24px;
 }

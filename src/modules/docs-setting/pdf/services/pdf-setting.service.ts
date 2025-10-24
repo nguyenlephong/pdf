@@ -13,7 +13,6 @@ export class PDFSettingService {
     try {
       // Load the original PDF
       let existingPdfBytes: ArrayBuffer;
-      console.log(`👨‍🎓 PhongNguyen 🎯 pdf.service.ts 👉 generatePDFWithForm 📝:`, originalPdfFile)
       
       // @ts-ignore ✅ If input is a CDN URL
       if (originalPdfFile?.url) {
@@ -42,8 +41,6 @@ export class PDFSettingService {
       const pages = pdfDoc.getPages();
       
       formFields.forEach(field => {
-        console.log(`👨‍🎓 PhongNguyen 🎯 pdf-setting.service.ts 👉  📝:`, field, field.meta.name)
-        
         // Get the page based on page number (0-based index)
         const pageIndex = Math.max(0, Math.min(field.page_number - 1, pages.length - 1));
         const page = pages[pageIndex]; 
@@ -144,7 +141,7 @@ export class PDFSettingService {
       const fieldPageMap = new Map<string, number>();
       if (formFields) {
         formFields.forEach(field => {
-          fieldPageMap.set(field.meta.name, field.page_number);
+          fieldPageMap.set(field.id, field.page_number);
         });
       }
 
@@ -170,9 +167,9 @@ export class PDFSettingService {
               
               // First try to get page from our field page map
               const fieldName = field.getName();
-              const pageNumber = fieldPageMap.get(fieldName);
-              if (pageNumber && pageNumber > 0 && pageNumber <= pages.length) {
-                targetPage = pages[pageNumber - 1]; // Convert to 0-based index
+              const page_number = fieldPageMap.get(fieldName);
+              if (page_number && page_number > 0 && page_number <= pages.length) {
+                targetPage = pages[page_number - 1]; // Convert to 0-based index
               }
               
               // If not found in map, we'll use the fallback logic below
@@ -181,9 +178,9 @@ export class PDFSettingService {
               if (!targetPage) {
                 const pageMatch = fieldName.match(/page[_-]?(\d+)/i);
                 if (pageMatch) {
-                  const pageNumber = parseInt(pageMatch[1]) - 1; // Convert to 0-based index
-                  if (pageNumber >= 0 && pageNumber < pages.length) {
-                    targetPage = pages[pageNumber];
+                  const page_number = parseInt(pageMatch[1]) - 1; // Convert to 0-based index
+                  if (page_number >= 0 && page_number < pages.length) {
+                    targetPage = pages[page_number];
                   }
                 }
               }
@@ -214,8 +211,7 @@ export class PDFSettingService {
       }
 
       // Save the PDF
-      const pdfBytes = await pdfDoc.save();
-      return pdfBytes;
+      return await pdfDoc.save();
     } catch (error) {
       console.error('Error filling and flattening PDF form:', error);
       throw error;
@@ -247,7 +243,7 @@ export class PDFSettingService {
       fields.forEach((field, ind) => {
         if (field instanceof PDFTextField) {
           const fieldPages = (field as any).getPages?.();
-          const pageNumber = fieldPages?.length > 0 ? fieldPages[0].getIndex() + 1 : 1;
+          const page_number = fieldPages?.length > 0 ? fieldPages[0].getIndex() + 1 : 1;
           
           extractedFields.push({
             ts: Date.now(),
@@ -267,7 +263,7 @@ export class PDFSettingService {
             },
             font_size: 12,
             color: "#000000",
-            page_number: pageNumber,
+            page_number: page_number,
             position: ind + 1
           });
         }
@@ -300,9 +296,9 @@ export class PDFSettingService {
     const sampleData: PDFFormData = {};
     
     formFields.forEach(field => {
-      switch (field.type) {
-        case 'text':
-          sampleData[field.meta.name] = `Sample ${field.label}`;
+      switch (field.meta.type) {
+        case 'free_text':
+          sampleData[field.id] = `Sample #${field.position} ${field.id}`;
           break;
         case 'date':
           sampleData[field.meta.name] = '2024-01-01';
@@ -314,7 +310,7 @@ export class PDFSettingService {
           sampleData[field.meta.name] = 'sample@example.com';
           break;
         default:
-          sampleData[field.meta.name] = `Sample ${field.label}`;
+          sampleData[field.id] = `Sample #${field.position} ${field.id}`;
       }
     });
     

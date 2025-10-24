@@ -2,7 +2,7 @@ import React, {useState} from 'react';
 import {PDFFormData} from '../types/form-field.type';
 import {PDFSettingService} from "../services/pdf-setting.service";
 import {FormFieldSetting} from "../types/pdf-setting.type";
-import {Box, Button, TextField, Typography} from "@mui/material";
+import {Box, Button, Grid, TextField, Typography} from "@mui/material";
 
 interface PDFFillerProps {
   pdfFile: File | null;
@@ -160,16 +160,24 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ formFields, formData, handleF
             )}
           </Typography>
           
-          <TextField
-            fullWidth
-            type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
-            value={formData[field.id] || ''}
-            onChange={(e) => handleFieldChange(field.id, e.target.value)}
-            placeholder={field.placeholder}
-            required={field.required}
-            size="small"
-            variant="outlined"
-          />
+          <Grid container rowSpacing={1} alignItems="center">
+            <Grid size={2}>
+              <Typography variant={'body1'}>Vị trí {field.position}</Typography>
+            </Grid>
+            
+            <Grid size={10}>
+              <TextField
+                fullWidth
+                type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
+                value={formData[field.id] || ''}
+                onChange={(e) => handleFieldChange(field.id, e.target.value)}
+                placeholder={field.placeholder}
+                required={field.required}
+                size="small"
+                variant="outlined"
+              />
+            </Grid>
+          </Grid>
         </Box>
       ))}
     </>

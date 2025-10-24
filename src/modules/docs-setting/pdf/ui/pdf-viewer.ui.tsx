@@ -4,8 +4,22 @@ import {useDropzone} from "react-dropzone";
 import {FormFieldBox, FormFieldSetting, ToolSettingConfig} from "../types/pdf-setting.type";
 import FormFieldOverlay from "./form-field-overlay.ui";
 import {DndContext, DragEndEvent} from "@dnd-kit/core";
-import {Button, Col, Input, Row} from "antd";
-import {LeftOutlined, RightOutlined} from "@ant-design/icons";
+import {Col, Row} from "antd";
+import {KeyboardArrowLeft, KeyboardArrowRight} from '@mui/icons-material';
+import {
+  Box,
+  Button,
+  Checkbox,
+  FormControl,
+  FormControlLabel,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+  TextField,
+  Typography
+} from '@mui/material';
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -463,7 +477,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
           <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px'}}>
             <p>Drag & drop a PDF file here, or click to select</p>
             <Button
-              type={'primary'}
+              variant={'outlined'}
               onClick={(e) => {
                 e.stopPropagation();
                 const input = document.createElement("input");
@@ -491,7 +505,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
     <Row className="pdf-viewer" gutter={[12, 12]}>
       {config?.enablePDFViewerToolBar && (
         <Col xs={24}>
-          <div className="pdf-controls">
+          <div className="pdf-controls-bar">
             
             <div style={{display: "flex", alignItems: "center", gap: "12px"}}>
               <div
@@ -516,7 +530,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
                   // Remove after a tick
                   setTimeout(() => document.body.removeChild(img), 0);
                 }}
-                className="button"
+                className="pdf-drag-box"
                 style={{cursor: "grab"}}
               >
                 Drag: Text Field
@@ -524,57 +538,23 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
             </div>
             
             
-            <div
-              className="grid-controls"
-              style={{display: "flex", alignItems: "center", gap: "12px"}}
-            >
-              <label style={{fontSize: "12px"}}>
-                <input
-                  type="checkbox"
-                  checked={snapToGrid}
-                  onChange={(e) => setSnapToGrid(e.target.checked)}
-                  style={{marginRight: "5px"}}
-                />
-                Snap to Grid
-              </label>
-              {snapToGrid && (
-                <div style={{display: "flex", alignItems: "center", gap: "5px"}}>
-                  <span style={{fontSize: "12px"}}>Size:</span>
-                  <input
-                    type="number"
-                    value={gridSize}
-                    onChange={(e) =>
-                      setGridSize(Math.max(5, parseInt(e.target.value) || 10))
-                    }
-                    min="5"
-                    max="50"
-                    style={{width: "50px", fontSize: "12px"}}
-                  />
-                </div>
-              )}
-            </div>
+            <GridControls
+              snapToGrid={snapToGrid}
+              setGridSize={setGridSize}
+              gridSize={gridSize}
+              setSnapToGrid={setSnapToGrid}
+            />
             
-            <div
-              className="drag-overlap-controls"
-              style={{display: "flex", alignItems: "center", gap: "12px"}}
-            >
-              <label style={{fontSize: "12px"}}>
-                <span style={{marginRight: "5px"}}>On Overlap:</span>
-                <select
-                  value={dragOverlapBehavior}
-                  onChange={(e) => setDragOverlapBehavior(e.target.value as 'snap' | 'return')}
-                  style={{fontSize: "12px"}}
-                >
-                  <option value="snap">Snap to Side</option>
-                  <option value="return">Return to Original</option>
-                </select>
-              </label>
-            </div>
+            <OverlapControl
+              dragOverlapBehavior={dragOverlapBehavior}
+              setDragOverlapBehavior={setDragOverlapBehavior}
+            />
             
             {/* Debug delete button */}
             {selectedField && (
               <div style={{display: "flex", alignItems: "center", gap: "12px"}}>
-                <button
+                <Button
+                  variant={'contained'}
                   className="button danger"
                   onClick={() => {
                     console.log("Debug: Deleting selected field:", selectedField.id);
@@ -583,7 +563,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
                   style={{fontSize: "12px", padding: "5px 10px"}}
                 >
                   Debug Delete Field
-                </button>
+                </Button>
                 <span style={{fontSize: "12px", color: "#666"}}>
               Selected: {selectedField.label}
             </span>
@@ -612,52 +592,59 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
           
           <Col xs={4} lg={3} xxl={2}>
             <div className={'f-center h-full'}>
-              <Button
-                type="primary" shape="circle" icon={<LeftOutlined/>}
+              
+              <IconButton
+                color="primary"
                 onClick={() => {
                   setPageNumber(Math.max(1, pageNumber - 1))
                   setPageActive(Math.max(1, pageNumber - 1));
                 }}
                 disabled={pageNumber <= 1}
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: 'background.paper',
+                  '&:hover': {bgcolor: 'action.hover'},
+                }}
               >
-              </Button>
+                <KeyboardArrowLeft fontSize="small"/>
+              </IconButton>
             </div>
           </Col>
           
           <Col xs={16} lg={18} xxl={20}>
             <Row gutter={[12, 12]} className={'w-full'}>
               <Col xs={24}>
-                <div className={"pdf-toolbox"}>
-                  <div>
-                    <h3 className={'pdf-t3 t-left'}>Hình dạng</h3>
-                    <p className={'pdf-txt-body t-left pdf-mt-12'}>Kéo thả hình vào tài liệu</p>
-                  </div>
-                  <Input
-                    role="button"
-                    draggable
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData("application/x-field-type", "text");
-                      // Optional: set drag image
-                      const img = document.createElement("div");
-                      img.style.width = "120px";
-                      img.style.height = "24px";
-                      img.style.background = "#2196F3";
-                      img.style.color = "white";
-                      img.style.display = "flex";
-                      img.style.alignItems = "center";
-                      img.style.justifyContent = "center";
-                      img.style.fontSize = "12px";
-                      img.style.borderRadius = "4px";
-                      img.textContent = "Text Field";
-                      document.body.appendChild(img);
-                      e.dataTransfer.setDragImage(img, 60, 12);
-                      // Remove after a tick
-                      setTimeout(() => document.body.removeChild(img), 0);
-                    }}
-                    style={{cursor: "grab", flex: 1}}
-                    size={'small'}
-                  />
-                </div>
+                
+                <Box
+                  className="pdf-toolbox"
+                  sx={{
+                    p: 2,
+                    borderRadius: 2,
+                    gap: 1.5,
+                  }}
+                >
+                  <Box>
+                    <Typography variant="h6" textAlign="left">
+                      Hình dạng
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" textAlign="left">
+                      Kéo thả hình vào tài liệu
+                    </Typography>
+                  </Box>
+                  
+                  <Box flex={1}>
+                    <DraggableInput/>
+                  </Box>
+                </Box>
+                
+                {/*<div className={"pdf-toolbox"}>*/}
+                {/*  <div>*/}
+                {/*    <h3 className={'pdf-t3 t-left'}>Hình dạng</h3>*/}
+                {/*    <p className={'pdf-txt-body t-left pdf-mt-12'}>Kéo thả hình vào tài liệu</p>*/}
+                {/*  </div>*/}
+                {/*  <DraggableInput/>*/}
+                {/*</div>*/}
               </Col>
               
               <Col xs={24}>
@@ -740,15 +727,23 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
           
           <Col xs={4} lg={3} xxl={2}>
             <div className={'f-center h-full'}>
-              <Button
-                type="primary" shape="circle" icon={<RightOutlined/>}
+              
+              <IconButton
+                color="primary"
                 onClick={() => {
                   setPageNumber(Math.min(numPages, pageNumber + 1))
                   setPageActive(Math.min(numPages, pageNumber + 1))
                 }}
                 disabled={pageNumber >= numPages}
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: 'background.paper',
+                  '&:hover': {bgcolor: 'action.hover'},
+                }}
               >
-              </Button>
+                <KeyboardArrowRight fontSize="small"/>
+              </IconButton>
             </div>
           </Col>
         
@@ -764,3 +759,133 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
 };
 
 export default PdfViewerUi;
+
+
+type DragOverlapBehavior = 'snap' | 'return';
+
+interface OverlapControlProps {
+  dragOverlapBehavior: DragOverlapBehavior;
+  setDragOverlapBehavior: (value: DragOverlapBehavior) => void;
+}
+
+const OverlapControl: React.FC<OverlapControlProps> = (props) => {
+  const {
+    dragOverlapBehavior,
+    setDragOverlapBehavior,
+  } = props
+  const handleChange = (e: SelectChangeEvent<DragOverlapBehavior>) => {
+    setDragOverlapBehavior(e.target.value as DragOverlapBehavior);
+  };
+  
+  return (
+    <Box display="flex" alignItems="center" gap={1.5}>
+      <Typography variant="body2">On Overlap:</Typography>
+      
+      <FormControl size="small" sx={{minWidth: 180}}>
+        <InputLabel id="overlap-select-label">Behavior</InputLabel>
+        <Select
+          labelId="overlap-select-label"
+          value={dragOverlapBehavior}
+          label="Behavior"
+          onChange={handleChange}
+        >
+          <MenuItem value="snap">Snap to Side</MenuItem>
+          <MenuItem value="return">Return to Original</MenuItem>
+        </Select>
+      </FormControl>
+    </Box>
+  );
+};
+
+interface GridControlsProps {
+  snapToGrid: boolean;
+  setSnapToGrid: (checked: boolean) => void;
+  gridSize: number;
+  setGridSize: (size: number) => void;
+}
+
+const GridControls: React.FC<GridControlsProps> = (props) => {
+  const {
+    snapToGrid,
+    setSnapToGrid,
+    gridSize,
+    setGridSize,
+  } = props
+  return (
+    <Box display="flex" alignItems="center" gap={1.5}>
+      {/* Checkbox for Snap to Grid */}
+      <FormControlLabel
+        control={
+          <Checkbox
+            checked={snapToGrid}
+            onChange={(e) => setSnapToGrid(e.target.checked)}
+            size="small"
+          />
+        }
+        label={<Typography variant="body2">Snap to Grid</Typography>}
+      />
+      
+      {/* Grid Size input, visible only when snapToGrid is true */}
+      {snapToGrid && (
+        <Box display="flex" alignItems="center" gap={1}>
+          <Typography variant="body2">Size:</Typography>
+          <TextField
+            type="number"
+            value={gridSize}
+            onChange={(e) => setGridSize(Math.max(5, parseInt(e.target.value) || 10))}
+            inputProps={{
+              min: 5,
+              max: 50,
+              style: {textAlign: 'center', fontSize: 12},
+            }}
+            size="small"
+            sx={{width: 70}}
+          />
+        </Box>
+      )}
+    </Box>
+  );
+};
+
+
+const DraggableInput: React.FC = () => {
+  const handleDragStart = (e: React.DragEvent<HTMLInputElement>) => {
+    e.dataTransfer.setData('application/x-field-type', 'text');
+    
+    // Create custom drag preview
+    const img = document.createElement('div');
+    img.style.width = '120px';
+    img.style.height = '24px';
+    img.style.background = '#1976d2'; // MUI primary color
+    img.style.color = 'white';
+    img.style.display = 'flex';
+    img.style.alignItems = 'center';
+    img.style.justifyContent = 'center';
+    img.style.fontSize = '12px';
+    img.style.borderRadius = '4px';
+    img.textContent = 'Text Field';
+    document.body.appendChild(img);
+    
+    e.dataTransfer.setDragImage(img, 60, 12);
+    setTimeout(() => document.body.removeChild(img), 0);
+  };
+  
+  return (
+    <TextField
+      fullWidth
+      size="small"
+      variant="outlined"
+      placeholder=""
+      role="button"
+      draggable
+      onDragStart={handleDragStart}
+      InputProps={{
+        sx: {
+          cursor: 'grab',
+          height: 20,
+        },
+      }}
+    />
+  );
+};
+
