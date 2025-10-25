@@ -195,6 +195,7 @@ function PDFSettingPage(props: IProps) {
             <div className="pdf-container">
               <PDFViewer
                 pdfFile={pdfFile}
+                pageActive={pageActive}
                 setPageActive={setPageActive}
                 formFields={formFields}
                 onAddField={handleAddField}
@@ -224,6 +225,7 @@ function PDFSettingPage(props: IProps) {
                 onSaveSetting={onSaveSetting}
                 attributes={attributes}
                 config={config}
+                setPageActive={setPageActive}
               />
               
               {config?.enablePDFFillerToolBox && (

@@ -12,6 +12,7 @@ interface FormConfigPanelProps {
   attributes?: CustomerAttributeData[];
   formFields: FormFieldSetting[];
   pageActive: number;
+  setPageActive: (page: number) => void;
   pdfFile: File | null;
   onUpdateField: (fieldId: string, updates: Partial<FormFieldSetting>) => void;
   onDeleteField: (fieldId: string) => void;
@@ -28,6 +29,7 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
     formFields,
     pdfFile,
     pageActive,
+    setPageActive,
     onUpdateField,
     onImportConfig,
     config,
@@ -37,7 +39,7 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
   
   const {t} = useTranslation();
   
-  const childRefs = React.useRef<Record<string, { save: () => any }>>({});
+  const childRefs = React.useRef<Record<string, { ref: {save: () => any}, field: FormFieldSetting }>>({});
   
   // @ts-ignore
   const handleFieldUpdate = (field: FormFieldSetting, value: any) => {
@@ -46,14 +48,17 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
   };
   
   const handleSaveAll = async () => {
-    const results = Object.entries(childRefs.current).map(([id, ref]) => ({
+    const results = Object.entries(childRefs.current).map(([id, data]) => ({
       id,
-      data: ref?.save(),
+      data: data?.ref?.save(),
+      field: data.field
     }));
-    
+
     const isErr = results.some((res) => res.data === -1);
     if (isErr) {
-      pdfLogger.log("❌ Please fix errors in form fields before saving.");
+      let firstError = results.find(x=> x.data === -1);
+      pdfLogger.error("❌ Please fix errors in form fields before saving.", firstError);
+      if (firstError?.field?.page_number) setPageActive(firstError?.field?.page_number);
       return;
     }
     
@@ -63,6 +68,7 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
       ts: new Date().toISOString(),
       version: '1.0'
     };
+    pdfLogger.log(`👨‍🎓 PhongNguyen 🎯 form-config-panel.ui.tsx 👉 handleSaveAll 📝:`, config)
     if (onSaveSetting) onSaveSetting(configExport);
   };
   
@@ -82,13 +88,12 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
           .map((x, ind) => {
             return {...x, position: x.position || ind + 1};
           })
-          .filter((field) => field.page_number === pageActive)
           .map((field: FormFieldSetting) => {
             return (
-              <Grid size={12} key={field.id}>
+              <Grid size={12} key={field.id} style={{display: field.page_number !== pageActive ? 'none': 'unset'}}>
                 <FieldItemSettingUI
                   /*@ts-ignore*/
-                  ref={(r) => (childRefs.current[field.id] = r)}
+                  ref={(r) => (childRefs.current[field.id] = {ref: r, field})}
                   attributes={attributes}
                   data={field}
                   selectedField={selectedField}

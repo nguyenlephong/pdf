@@ -20,6 +20,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 interface PDFViewerProps {
   config?: ToolSettingConfig;
   pdfFile: File | null;
+  pageActive: number;
   setPageActive: (page: number) => void;
   onUpdateLoading: (isLoading: boolean) => void;
   formFields: FormFieldSetting[];
@@ -36,6 +37,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
     pdfFile,
     formFields,
     onAddField,
+    pageActive: pageNumber,
     setPageActive,
     onSelectField,
     selectedField,
@@ -49,7 +51,6 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
   const {t} = useTranslation();
   
   const [numPages, setNumPages] = useState<number>(0);
-  const [pageNumber, setPageNumber] = useState<number>(1);
   const [isFirstRender, setIsFirstRender] = useState<boolean>(true);
   const [scale, setScale] = useState<number>(1);
   const [snapToGrid, setSnapToGrid] = useState<boolean>(false);
@@ -473,7 +474,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
     container.innerHTML = '';
     
     // handle both File or remote url case
-    let url: string | null = null;
+    let url: any = '';
     try {
       url = URL.createObjectURL(file);
     } catch {
@@ -507,6 +508,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
       canvas.width = viewport.width;
       canvas.height = viewport.height;
       
+      // @ts-ignore
       await page.render({ canvasContext: context, viewport }).promise;
       
       canvas.addEventListener('click', () => {
@@ -516,7 +518,6 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
         allCanvases.forEach((el) => el.classList.remove('active'));
         
         canvasWrapper.classList.add('active');
-        setPageNumber(i);
         setPageActive(i);
       });
       
@@ -534,13 +535,11 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
   
   const handleNextPage = () => {
     const nextPage = Math.min(numPages, pageNumber + 1)
-    setPageNumber(nextPage);
     setPageActive(nextPage);
   }
   
   const handlePrevPage = () => {
     const prevPage = Math.max(1, pageNumber - 1)
-    setPageNumber(prevPage);
     setPageActive(prevPage);
   }
   
