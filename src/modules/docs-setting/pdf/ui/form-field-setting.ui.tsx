@@ -5,6 +5,7 @@ import Select, {SelectChangeEvent} from '@mui/material/Select';
 import FreeTextForm from "./form/free-text.ui";
 import DropdownForm from "./form/dropdown.ui";
 import React from "react";
+import isEqual from "lodash/isEqual";
 import {CustomerAttributeData, FormFieldSetting} from "../types/pdf-setting.type";
 import {Box, Grid} from "@mui/material";
 import {FIELD_OPTS, FIELD_VALUE_TYPE} from "@/modules/docs-setting/pdf/pdf.const";
@@ -29,15 +30,21 @@ const FormFieldSettingUI = React.forwardRef((props: IProps, ref) => {
   const { t } = useTranslation();
   const ns = "modules.docs_setting.pdf.field_opts";
   
-  const [field, setField] = React.useState<any>({...props.data});
+  const [field, setField] = React.useState<FormFieldSetting>({...props.data});
   const optRef = React.useRef<{ save: () => any }>(null);
   
   const [opt, setOpt] = React.useState<string>(props.data?.setting?.type || FIELD_VALUE_TYPE.FREE_TEXT);
   const [fieldOpts, setFieldOpts] = React.useState<OptionData[]>([]);
   
   React.useEffect(() => {
-    setField({...field, ...data});
-  }, [data])
+    setField((prev) => {
+      if (!isEqual(prev, data)) {
+        return { ...prev, ...data };
+      }
+      return prev;
+    });
+  }, [data]);
+
 
   React.useEffect(() => {
     let optInit: any[] = FIELD_OPTS.map((opt) => {

@@ -175,7 +175,6 @@ function PDFSettingPage(props: IProps) {
     setFormFields(loadedFields);
     setSelectedField(null);
   };
-  pdfLogger.info("form fields", formFields.map((field) => ({id: field.id, name: field?.setting?.title, x: field.box.x, y: field.box.y })));
   return (
     <React.Fragment>
       {isLoading && (
