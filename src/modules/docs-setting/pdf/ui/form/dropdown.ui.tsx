@@ -33,7 +33,6 @@ const DropdownForm: React.FC<DropdownFormProps> = React.forwardRef(({data, onSav
   const [form, setForm] = useState<FormState>(() => normalizeDataToForm(data?.setting || null));
   const [errors, setErrors] = useState<Record<string, string>>({});
   
-  // Đồng bộ dữ liệu khi data thay đổi
   useEffect(() => {
     //@ts-ignore
     const next = normalizeDataToForm(data?.setting || null);

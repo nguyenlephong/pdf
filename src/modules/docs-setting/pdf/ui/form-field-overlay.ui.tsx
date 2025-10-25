@@ -2,6 +2,7 @@ import React, {useCallback, useMemo, useRef, useState} from "react";
 import {useDraggable} from "@dnd-kit/core";
 import {Resizable} from 're-resizable';
 import {FormFieldSetting} from "../types/pdf-setting.type";
+import { pdfLogger } from '@/modules/docs-setting/pdf/services/logger.service';
 
 interface FormFieldOverlayProps {
   field: FormFieldSetting;
@@ -72,7 +73,7 @@ const FormFieldOverlayUi: React.FC<FormFieldOverlayProps> = (props) => {
         );
 
         if (hasOverlap) {
-          console.log(`Resize would overlap with field ${otherField.id}:`, {
+          pdfLogger.log(`Resize would overlap with field ${otherField.id}:`, {
             current: { x: box.x, y: box.y, width, height },
             other: {
               x: otherBox.x,
@@ -106,13 +107,13 @@ const FormFieldOverlayUi: React.FC<FormFieldOverlayProps> = (props) => {
       const newWidth = field.box.width + delta.width / scale;
       const newHeight = field.box.height + delta.height / scale;
 
-      console.log("Resizing:", { newWidth, newHeight, delta });
+      pdfLogger.log("Resizing:", { newWidth, newHeight, delta });
 
       // Check overlap before updating local state
       if (!checkResizeOverlap(newWidth, newHeight)) {
         setLocalSize({ width: newWidth, height: newHeight });
       } else {
-        console.log("Cannot resize - would cause overlap");
+        pdfLogger.log("Cannot resize - would cause overlap");
       }
     },
     [field.box.width, field.box.height, scale, checkResizeOverlap]
@@ -126,10 +127,10 @@ const FormFieldOverlayUi: React.FC<FormFieldOverlayProps> = (props) => {
       if (localSize) {
         // Final check before committing
         if (!checkResizeOverlap(localSize.width, localSize.height)) {
-          console.log("Committing resize to parent:", localSize);
+          pdfLogger.log("Committing resize to parent:", localSize);
           onResize(localSize.width, localSize.height);
         } else {
-          console.log("Cannot commit resize - overlap detected");
+          pdfLogger.log("Cannot commit resize - overlap detected");
         }
       }
 

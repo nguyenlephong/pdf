@@ -14,6 +14,7 @@ import {PDFSettingService} from "./services/pdf-setting.service";
 import {Box, Grid} from "@mui/material";
 import LinearProgress from '@mui/material/LinearProgress';
 import {useTranslation} from "react-i18next";
+import { pdfLogger } from '@/modules/docs-setting/pdf/services/logger.service';
 
 interface IProps {
   pdfUrl?: string; // CDN URL or local file path
@@ -41,14 +42,18 @@ function PDFSettingPage(props: IProps) {
   }, [pdfUrl]);
   
   React.useEffect(() => {
-    if (props) console.log("PDFSettingPage received new props: ", props);
+    if (props) pdfLogger.log("PDFSettingPage received new props: ", props);
   }, [props]);
   
   React.useEffect(() => {
     if (config?.lang) {
       i18n.changeLanguage(config?.lang).then(() => {
-        console.log("Language changed to: ", config?.lang);
+        pdfLogger.log("Language changed to: ", config?.lang);
       });
+    }
+    
+    if(config?.enableLogger) {
+      pdfLogger.setEnabled(config?.enableLogger);
     }
   }, [config]);
   
@@ -97,7 +102,7 @@ function PDFSettingPage(props: IProps) {
       
       setPageActive(1)
     } catch (error) {
-      console.error("Error loading or extracting PDF:", error);
+      pdfLogger.error("Error loading or extracting PDF:", error);
     }
   };
   
@@ -226,7 +231,7 @@ function PDFSettingPage(props: IProps) {
                   pdfFile={pdfFile}
                   formFields={formFields}
                   onPDFGenerated={(pdfBytes) => {
-                    console.log("PDF generated:", pdfBytes.length, "bytes");
+                    pdfLogger.log("PDF generated:", pdfBytes.length, "bytes");
                   }}
                 />
               )}

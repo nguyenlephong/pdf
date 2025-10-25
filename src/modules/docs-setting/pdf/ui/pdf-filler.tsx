@@ -3,6 +3,7 @@ import {PDFFormData} from '../types/form-field.type';
 import {PDFSettingService} from "../services/pdf-setting.service";
 import {FormFieldSetting} from "../types/pdf-setting.type";
 import {Box, Button, Grid, TextField, Typography} from "@mui/material";
+import { pdfLogger } from '@/modules/docs-setting/pdf/services/logger.service';
 
 interface PDFFillerProps {
   pdfFile: File | null;
@@ -62,8 +63,7 @@ const PdfFiller: React.FC<PDFFillerProps> = ({
       onPDFGenerated(filledPdf);
       PDFSettingService.downloadPDF(filledPdf, 'filled-form.pdf');
     } catch (error) {
-      console.error('Error generating filled PDF:', error);
-      alert('Error generating PDF. Please check the console for details.');
+      pdfLogger.error('Error generating PDF file with error: ', error);
     } finally {
       setIsLoading(false);
     }

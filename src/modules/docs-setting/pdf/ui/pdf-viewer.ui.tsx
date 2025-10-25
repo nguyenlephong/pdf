@@ -5,6 +5,7 @@ import {FormFieldBox, FormFieldSetting, ToolSettingConfig} from "../types/pdf-se
 import FormFieldOverlay from "./form-field-overlay.ui";
 import {DndContext, DragEndEvent} from "@dnd-kit/core";
 import {KeyboardArrowLeft, KeyboardArrowRight} from '@mui/icons-material';
+import { pdfLogger } from '@/modules/docs-setting/pdf/services/logger.service';
 import {
   Box,
   Button,
@@ -201,10 +202,10 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
             field.box.height
           );
           onUpdateBoxField(field.id, {x: finalX, y: finalY});
-          console.log("Field snapped to avoid overlap");
+          pdfLogger.log("Field snapped to avoid overlap");
         } else {
           // Return to original position
-          console.log("Cannot move field - would cause overlap, returning to original position");
+          pdfLogger.log("Cannot move field - would cause overlap, returning to original position");
         }
       }
     }
@@ -439,7 +440,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
     if (!hasOverlap) {
       onUpdateBoxField(fieldId, {width: newWidth, height: newHeight});
     } else {
-      console.log("Cannot resize field - would cause overlap");
+      pdfLogger.log("Cannot resize field - would cause overlap");
     }
   };
   
@@ -465,7 +466,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
   const handleFieldDelete = (fieldId: string, event: React.MouseEvent) => {
     event.stopPropagation();
     event.preventDefault();
-    console.log("PDFViewer: Deleting field:", fieldId); // For debugging
+    pdfLogger.log("PDFViewer: Deleting field:", fieldId); // For debugging
     onDeleteField(fieldId);
     if (selectedField?.id === fieldId) {
       onSelectField(null);
@@ -641,7 +642,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
                   variant={'contained'}
                   className="button danger"
                   onClick={() => {
-                    console.log("Debug: Deleting selected field:", selectedField.id);
+                    pdfLogger.log("Debug: Deleting selected field:", selectedField.id);
                     handleFieldDelete(selectedField.id, new MouseEvent('click') as any);
                   }}
                   style={{fontSize: "12px", padding: "5px 10px"}}

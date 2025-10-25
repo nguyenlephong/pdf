@@ -1,4 +1,5 @@
 import {FormFieldSetting, PDFSettingData} from "../types/pdf-setting.type";
+import { pdfLogger } from '@/modules/docs-setting/pdf/services/logger.service';
 
 export class PDFConfigService {
   
@@ -20,7 +21,7 @@ export class PDFConfigService {
       document.body.removeChild(link);
       URL.revokeObjectURL(blobUrl);
     } catch (err) {
-      console.error("Download failed:", err);
+      pdfLogger.error("Download failed:", err);
     }
   };
   
@@ -94,10 +95,10 @@ export class PDFConfigService {
       configLink.download = `${pdfFile.name.replace('.pdf', '')}_config.json`;
       configLink.click();
       URL.revokeObjectURL(configUrl);
-
-      console.log('Exported PDF and config files successfully');
+      
+      pdfLogger.log('Exported PDF and config files successfully');
     } catch (error) {
-      console.error('Error exporting PDF with config:', error);
+      pdfLogger.error('Error exporting PDF with config:', error);
       throw error;
     }
   }
@@ -135,7 +136,7 @@ export class PDFConfigService {
         form_fields: validatedFields
       };
     } catch (error) {
-      console.error('Error importing PDF with config:', error);
+      pdfLogger.error('Error importing PDF with config:', error)
       throw error;
     }
   }
@@ -183,7 +184,7 @@ export class PDFConfigService {
         form_fields: validatedFields
       };
     } catch (error) {
-      console.error('Error loading PDF with config:', error);
+      pdfLogger.error('Error loading PDF with config:', error);
       throw error;
     }
   }

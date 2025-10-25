@@ -9,6 +9,7 @@ import {CustomerAttributeData, FormFieldSetting} from "../types/pdf-setting.type
 import {Box, Grid} from "@mui/material";
 import {FIELD_OPTS} from "@/modules/docs-setting/pdf/pdf.const";
 import { useTranslation } from 'react-i18next';
+import {pdfLogger} from "@/modules/docs-setting/pdf/services/logger.service";
 
 
 type IProps = {
@@ -54,7 +55,7 @@ const FormFieldSettingUI = React.forwardRef((props: IProps, ref) => {
   React.useImperativeHandle(ref, () => ({
     save: () => {
       const data = optRef.current?.save();
-      console.log("📨 ChildForm forwarded save:", data);
+      pdfLogger.log("📨 ChildForm forwarded save:", data);
       return data
     },
   }));

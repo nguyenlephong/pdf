@@ -3,6 +3,7 @@ import {CustomerAttributeData, FormFieldSetting, PDFSettingData, ToolSettingConf
 import {PDFConfigService} from '../services/config-pdf.service';
 import FieldItemSettingUI from './form-field-setting.ui';
 import {Box, Grid, Button} from "@mui/material";
+import { pdfLogger } from '@/modules/docs-setting/pdf/services/logger.service';
 
 interface FormConfigPanelProps {
   config?: ToolSettingConfig;
@@ -49,7 +50,7 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
     
     const isErr = results.some((res) => res.data === -1);
     if (isErr) {
-      console.log("❌ Please fix errors in form fields before saving.");
+      pdfLogger.log("❌ Please fix errors in form fields before saving.");
       return;
     }
     
@@ -100,13 +101,13 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
               variant={'outlined'}
               onClick={async () => {
                 if (!pdfFile || formFields.length === 0) {
-                  console.log('Please load a PDF and add form fields first');
+                  pdfLogger.log('Please load a PDF and add form fields first');
                   return;
                 }
                 try {
                   await PDFConfigService.exportPDFWithConfig(pdfFile, formFields);
                 } catch (error) {
-                  console.error('Export error:', error);
+                  pdfLogger.error('Export error:', error);
                 }
               }}
               disabled={formFields.length === 0 || !pdfFile}
@@ -119,7 +120,7 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
               variant={'outlined'}
               onClick={async () => {
                 if (formFields.length === 0) {
-                  console.log('Please load a PDF and add form fields first');
+                  pdfLogger.log('Please load a PDF and add form fields first');
                   return;
                 }
                 try {
@@ -144,7 +145,7 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
                 input.onchange = async (e) => {
                   const files = (e.target as HTMLInputElement).files;
                   if (!files || files.length < 1) {
-                    console.log('Please select at least one file');
+                    pdfLogger.log('Please select at least one file');
                     return;
                   }
                   
@@ -163,15 +164,15 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
                   if (files.length === 1) {
                     // Single file selected
                     if (pdfFile) {
-                      console.log('PDF file selected. Please also select a JSON config file, or create new form fields.');
+                      pdfLogger.log('PDF file selected. Please also select a JSON config file, or create new form fields.');
                       onLoadPDFWithConfig(pdfFile, []);
                     } else if (configFile) {
-                      console.log('Config file selected. Please also select the corresponding PDF file.');
+                      pdfLogger.log('Config file selected. Please also select the corresponding PDF file.');
                     }
                   } else if (files.length === 2) {
                     // Both files selected
                     if (!pdfFile || !configFile) {
-                      console.log('Please select one PDF file and one JSON config file');
+                      pdfLogger.log('Please select one PDF file and one JSON config file');
                       return;
                     }
                     
@@ -179,13 +180,13 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
                       const {pdfFile: loadedPDF, form_fields: loadedFields} =
                         await PDFConfigService.importPDFWithConfig(pdfFile, configFile);
                       onLoadPDFWithConfig(loadedPDF, loadedFields);
-                      console.log(`Successfully loaded PDF with ${loadedFields.length} form fields`);
+                      pdfLogger.log(`Successfully loaded PDF with ${loadedFields.length} form fields`);
                     } catch (error) {
-                      console.error('Import error:', error);
-                      console.log('Error importing files');
+                      pdfLogger.error('Import error:', error);
+                      pdfLogger.log('Error importing files');
                     }
                   } else {
-                    console.log('Please select maximum 2 files (one PDF and one JSON config)');
+                    pdfLogger.log('Please select maximum 2 files (one PDF and one JSON config)');
                   }
                 };
                 input.click();
@@ -204,13 +205,13 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
                 input.onchange = async (e) => {
                   const files = (e.target as HTMLInputElement).files;
                   if (!files || files.length !== 1) {
-                    console.log('Please select one JSON config file');
+                    pdfLogger.log('Please select one JSON config file');
                     return;
                   }
                   
                   const configFile = files[0];
                   if (!configFile.name.endsWith('.json') && configFile.type !== 'application/json') {
-                    console.log('Please select a valid JSON config file');
+                    pdfLogger.log('Please select a valid JSON config file');
                     return;
                   }
                   
@@ -220,14 +221,14 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
                     const config = JSON.parse(configText);
                     
                     if (!config.form_fields || !Array.isArray(config.form_fields)) {
-                      console.log('Invalid config format. Config must contain formFields array.');
+                      pdfLogger.log('Invalid config format. Config must contain formFields array.');
                       return;
                     }
                     
                     onImportConfig(config.form_fields);
-                    console.log(`Successfully imported ${config.form_fields.length} form fields from config. Please load the corresponding PDF file.`);
+                    pdfLogger.log(`Successfully imported ${config.form_fields.length} form fields from config. Please load the corresponding PDF file.`);
                   } catch (error) {
-                    console.error('Config import error:', error);
+                    pdfLogger.error('Config import error:', error);
                   }
                 };
                 input.click();

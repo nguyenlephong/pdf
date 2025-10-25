@@ -1,6 +1,7 @@
 import {PDFDocument, PDFTextField, rgb, StandardFonts} from 'pdf-lib';
 import {PDFFormData} from '../types/form-field.type';
 import {FormFieldSetting, PDFSettingData} from "../types/pdf-setting.type";
+import { pdfLogger } from '@/modules/docs-setting/pdf/services/logger.service';
 
 export class PDFSettingService {
   /**
@@ -68,7 +69,7 @@ export class PDFSettingService {
       // Save the PDF
       return await pdfDoc.save();
     } catch (error) {
-      console.error('Error generating PDF with form:', error);
+      pdfLogger.error('Error generating PDF with form:', error);
       throw error;
     }
   }
@@ -96,7 +97,7 @@ export class PDFSettingService {
             field.setText(String(value));
           }
         } catch (error) {
-          console.warn(`Could not fill field ${fieldName}:`, error);
+          pdfLogger.warn(`Could not fill field ${fieldName}:`, error);
         }
       });
 
@@ -104,7 +105,7 @@ export class PDFSettingService {
       const pdfBytes = await pdfDoc.save();
       return pdfBytes;
     } catch (error) {
-      console.error('Error filling PDF form:', error);
+      pdfLogger.error('Error filling PDF form:', error);
       throw error;
     }
   }
@@ -133,7 +134,7 @@ export class PDFSettingService {
             field.setText(String(value));
           }
         } catch (error) {
-          console.warn(`Could not fill field ${fieldName}:`, error);
+          pdfLogger.warn(`Could not fill field ${fieldName}:`, error);
         }
       });
 
@@ -206,14 +207,14 @@ export class PDFSettingService {
           // Remove the form field after extracting its content
           form.removeField(field);
         } catch (error) {
-          console.warn(`Could not flatten field ${field.getName()}:`, error);
+          pdfLogger.warn(`Could not flatten field ${field.getName()}:`, error);
         }
       }
 
       // Save the PDF
       return await pdfDoc.save();
     } catch (error) {
-      console.error('Error filling and flattening PDF form:', error);
+      pdfLogger.error('Error filling and flattening PDF form:', error);
       throw error;
     }
   }
@@ -271,7 +272,7 @@ export class PDFSettingService {
       
       return extractedFields;
     } catch (error) {
-      console.error("Error extracting form fields:", error);
+      pdfLogger.error("Error extracting form fields:", error);
       throw error;
     }
   }
@@ -321,7 +322,7 @@ export class PDFSettingService {
     const config = data;
     
     if (!config.form_fields || !Array.isArray(config.form_fields)) {
-      console.log('Invalid config format. Config must contain formFields array.');
+      pdfLogger.log('Invalid config format. Config must contain formFields array.');
       return [];
     }
     

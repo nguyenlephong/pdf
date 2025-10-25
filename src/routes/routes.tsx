@@ -396,6 +396,7 @@ export const router = createBrowserRouter([
             enablePDFFillerToolBox: false,
             enableExportToolBox: false,
             enablePDFViewerToolBar: false,
+            enableLogger: true,
             lang: "vi"
           }}
         />,

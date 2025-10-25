@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {Box, Divider, FormControlLabel, FormLabel, Grid, Radio, RadioGroup, TextField,} from "@mui/material";
+import NumericInput from "@/modules/docs-setting/pdf/ui/form/number-input.ui";
 
 type AnswerType = "min" | "max" | "exact" | "confirm";
 type ConfirmType = "email" | "phone" | "date" | "number";
@@ -77,6 +78,11 @@ const FreeTextForm: React.FC<ItemConfProps> = React.forwardRef(({ data, onSaveSe
   
   const handleInputChange = (name: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement>) => {
       updateForm({ [name]: e.target.value } as Partial<FormState>);
+    clearFieldError(name);
+    };
+  
+  const handleNumberInputChange = (name: keyof FormState) => (n: Number) => {
+      updateForm({ [name]: n } as Partial<FormState>);
       clearFieldError(name);
     };
   
@@ -94,7 +100,18 @@ const FreeTextForm: React.FC<ItemConfProps> = React.forwardRef(({ data, onSaveSe
     });
   };
   
-  const checkPositive = (val: string) => /^\d+$/.test(val) && Number(val) > 0;
+  const checkPositive = (val: string | number): boolean => {
+    const num = Number(val);
+    
+    // Must be a finite integer within JS safe range and > 0
+    return (
+      Number.isFinite(num) &&
+      Number.isInteger(num) &&
+      num > 0 &&
+      num <= Number.MAX_SAFE_INTEGER
+    );
+  }
+  
   
   const validate = (f: FormState) => {
     const errs: Record<string, string> = {};
@@ -106,10 +123,16 @@ const FreeTextForm: React.FC<ItemConfProps> = React.forwardRef(({ data, onSaveSe
     // validate theo answerType
     if (f?.answerType === "min") {
       if (!checkPositive(f.minChar)) errs.minChar = "Vui lòng nhập số ký tự tối thiểu";
+      if (Number(f.minChar) >= Number.MAX_SAFE_INTEGER) {
+        errs.minChar = "Vui lòng nhập số ký tự hợp lệ (quá lớn)";
+      }
     }
     
     if (f?.answerType === "max") {
       if (!checkPositive(f.maxChar)) errs.maxChar = "Vui lòng nhập số ký tự tối đa";
+      if (Number(f.maxChar) >= Number.MAX_SAFE_INTEGER) {
+        errs.maxChar = "Vui lòng nhập số ký tự hợp lệ (quá lớn)";
+      }
     }
     
     if (f?.answerType === "exact") {
@@ -121,6 +144,13 @@ const FreeTextForm: React.FC<ItemConfProps> = React.forwardRef(({ data, onSaveSe
       if (checkPositive(f.minChar) && checkPositive(f.maxChar) && numMax <= numMin) {
         errs.maxChar = "Ký tự tối đa phải lớn hơn ký tự tối thiểu";
       }
+      
+      if (Number(f.minChar) >= Number.MAX_SAFE_INTEGER) {
+        errs.minChar = "Vui lòng nhập số ký tự hợp lệ (quá lớn)";
+      }
+      if (Number(f.maxChar) >= Number.MAX_SAFE_INTEGER) {
+        errs.maxChar = "Vui lòng nhập số ký tự hợp lệ (quá lớn)";
+      }
     }
     
     if (f.answerType === "confirm" && f.confirmType === "number") {
@@ -130,6 +160,12 @@ const FreeTextForm: React.FC<ItemConfProps> = React.forwardRef(({ data, onSaveSe
       if (f.maxValue && !checkPositive(f.maxValue)) errs.maxValue = "Giá trị lớn nhất phải > 0";
       if (vMin && vMax && vMax <= vMin) {
         errs.maxValue = "Giá trị lớn nhất phải lớn hơn giá trị nhỏ nhất";
+      }
+      if (Number(f.minValue) >= Number.MAX_SAFE_INTEGER) {
+        errs.minValue = "Giá trị nhỏ nhất quá lớn, vui lòng nhập lại";
+      }
+      if (Number(f.maxValue) >= Number.MAX_SAFE_INTEGER) {
+        errs.maxValue = "Giá trị lớn nhất quá lớn, vui lòng nhập lại";
       }
     }
     
@@ -206,12 +242,12 @@ const FreeTextForm: React.FC<ItemConfProps> = React.forwardRef(({ data, onSaveSe
       {(answerType === "min" || answerType === "max" || answerType === "exact") && (
         <Grid container spacing={2} sx={{ mt: 1 }}>
           <Grid size={6}>
-            <TextField
+            <NumericInput
               fullWidth
               type="number"
               label="Nhập số ký tự tối thiểu"
               value={minChar}
-              onChange={handleInputChange("minChar")}
+              onChange={handleNumberInputChange("minChar")}
               disabled={answerType === "max"}
               error={!!errors.minChar}
               size="small"
@@ -220,13 +256,13 @@ const FreeTextForm: React.FC<ItemConfProps> = React.forwardRef(({ data, onSaveSe
             />
           </Grid>
           <Grid size={6}>
-            <TextField
+            <NumericInput
               fullWidth
               type="number"
               label="Nhập số ký tự tối đa"
               value={maxChar}
               size="small"
-              onChange={handleInputChange("maxChar")}
+              onChange={handleNumberInputChange("maxChar")}
               disabled={answerType === "min"}
               error={!!errors.maxChar}
               helperText={errors.maxChar}
@@ -264,26 +300,26 @@ const FreeTextForm: React.FC<ItemConfProps> = React.forwardRef(({ data, onSaveSe
           {confirmType === "number" && (
             <Grid container spacing={2} sx={{ mt: 1 }}>
               <Grid size={6}>
-                <TextField
+                <NumericInput
                   fullWidth
                   type="number"
                   label="Giá trị nhỏ nhất"
                   size="small"
                   value={minValue}
-                  onChange={handleInputChange("minValue")}
+                  onChange={handleNumberInputChange("minValue")}
                   error={!!errors.minValue}
                   helperText={errors.minValue}
                   inputProps={{ min: 1 }}
                 />
               </Grid>
               <Grid size={6}>
-                <TextField
+                <NumericInput
                   fullWidth
                   type="number"
                   label="Giá trị lớn nhất"
                   size="small"
                   value={maxValue}
-                  onChange={handleInputChange("maxValue")}
+                  onChange={handleNumberInputChange("maxValue")}
                   error={!!errors.maxValue}
                   helperText={errors.maxValue}
                   inputProps={{ min: 1 }}

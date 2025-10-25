@@ -16,6 +16,8 @@ export default defineConfig({
   },
   define: {
     'process.env.NODE_ENV': '"production"',
+    'process.env.VITE_APP_LOGGER_ENABLED': false,
+    'process.env.VITE_APP_LOG_LEVEL': false,
     'process.env': {},
   },
   css: {

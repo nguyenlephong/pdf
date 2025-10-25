@@ -50,5 +50,6 @@ export interface ToolSettingConfig {
   enableExportToolBox?: boolean;
   enablePDFViewerToolBar?: boolean;
   enablePDFFillerToolBox?: boolean;
+  enableLogger?: boolean;
   lang?: 'en' | 'vi' | string;
 }
