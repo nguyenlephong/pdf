@@ -190,7 +190,7 @@ function PDFSettingPage(props: IProps) {
       >
         <Grid container className={"main-container"} rowSpacing={1}>
           
-          <Grid size={{xs: 12, md: 6, xl: 8}} sx={{pl: 3, pr: 3}}>
+          <Grid size={{xs: 12, md: 6, xl: 8}} sx={{p: 3}}>
             <div className="pdf-container">
               <PDFViewer
                 pdfFile={pdfFile}
@@ -209,7 +209,7 @@ function PDFSettingPage(props: IProps) {
             </div>
           </Grid>
           
-          <Grid size={{xs: 12, md: 6, xl: 4}} sx={{pl: 3, pr: 3, borderLeft: '1px solid #3C3C434A'}}>
+          <Grid size={{xs: 12, md: 6, xl: 4}} sx={{p: 3, borderLeft: '1px solid #3C3C434A'}}>
             <div className="pdf-config-container">
               <FormConfigPanel
                 selectedField={selectedField}
