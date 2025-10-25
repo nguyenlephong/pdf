@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {Box, IconButton, TextField, Typography} from "@mui/material";
 import {AddCircleOutlineOutlined, RemoveCircleOutlineOutlined} from "@mui/icons-material";
+import {useTranslation} from "react-i18next";
 
 type SavePayload = {
   title: string;
@@ -29,7 +30,8 @@ const normalizeDataToForm = (data?: Partial<SavePayload> | null): FormState => (
 });
 
 const DropdownForm: React.FC<DropdownFormProps> = React.forwardRef(({data, onSaveSetting}, ref) => {
-  //@ts-ignore
+  const {t} = useTranslation();
+  // @ts-ignore
   const [form, setForm] = useState<FormState>(() => normalizeDataToForm(data?.setting || null));
   const [errors, setErrors] = useState<Record<string, string>>({});
   
@@ -84,17 +86,26 @@ const DropdownForm: React.FC<DropdownFormProps> = React.forwardRef(({data, onSav
   const validate = (f: FormState) => {
     const errs: Record<string, string> = {};
     
-    if (!f?.title?.trim()) errs.title = "Vui lòng nhập tiêu đề";
-    else if (f.title?.length > 400) errs.title = "Tựa đề không được vượt quá 400 ký tự";
+    if (!f?.title?.trim())
+      errs.title = t("modules.docs_setting.pdf.dropdown_form.errors.title_required");
+    else if (f.title?.length > 400)
+      errs.title = t("modules.docs_setting.pdf.dropdown_form.errors.title_too_long", {max: 400});
     
     f.options.forEach((opt, idx) => {
-      if (!opt?.trim()) errs[`option_${idx}`] = "Vui lòng nhập đáp án";
+      if (!opt?.trim())
+        errs[`option_${idx}`] = t("modules.docs_setting.pdf.dropdown_form.errors.option_required", {index: idx + 1});
       else if (opt.length > 255)
-        errs[`option_${idx}`] = "Đáp án không được vượt quá 255 ký tự";
+        errs[`option_${idx}`] = t("modules.docs_setting.pdf.dropdown_form.errors.option_too_long", {
+          index: idx + 1,
+          max: 255
+        });
     });
     
     if (f.options.length < 2)
-      errs["options"] = "Phải có ít nhất 2 đáp án";
+      errs["options"] = t("modules.docs_setting.pdf.dropdown_form.errors.options_minimum", {
+        min: 2,
+        count: f.options.length,
+      });
     
     return errs;
   };
@@ -107,7 +118,7 @@ const DropdownForm: React.FC<DropdownFormProps> = React.forwardRef(({data, onSav
       const dataSaving = {
         title: formData.title,
         options: formData.options,
-      }
+      };
       onSaveSetting(dataSaving);
       return dataSaving;
     }
@@ -120,13 +131,13 @@ const DropdownForm: React.FC<DropdownFormProps> = React.forwardRef(({data, onSav
   }));
   
   return (
-    <Box sx={{textAlign: "left", width: "100%",}}>
+    <Box sx={{textAlign: "left", width: "100%"}}>
       <TextField
         fullWidth
         variant="outlined"
-        label="Tựa đề *"
+        label={t("modules.docs_setting.pdf.dropdown_form.title_label")}
         size="small"
-        placeholder="Nhập tiêu đề"
+        placeholder={t("modules.docs_setting.pdf.dropdown_form.title_placeholder")}
         value={form.title}
         onChange={handleTitleChange}
         error={!!errors.title}
@@ -144,7 +155,7 @@ const DropdownForm: React.FC<DropdownFormProps> = React.forwardRef(({data, onSav
           }}
         >
           <Typography fontWeight="bold">
-            Tùy chỉnh số lượng giá trị
+            {t("modules.docs_setting.pdf.dropdown_form.option_count_title")}
           </Typography>
           
           <Box sx={{display: "flex", justifyContent: "flex-start", gap: 1, mt: 1}}>
@@ -172,7 +183,7 @@ const DropdownForm: React.FC<DropdownFormProps> = React.forwardRef(({data, onSav
             <TextField
               fullWidth
               size="small"
-              placeholder="Điền giá trị"
+              placeholder={t("modules.docs_setting.pdf.dropdown_form.option_placeholder")}
               value={opt}
               onChange={(e) => handleOptionChange(idx, e.target.value)}
               error={!!errors[`option_${idx}`]}

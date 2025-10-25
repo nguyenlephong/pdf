@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {Box, Divider, FormControlLabel, FormLabel, Grid, Radio, RadioGroup, TextField,} from "@mui/material";
+import {useTranslation} from "react-i18next";
 import NumericInput from "@/modules/docs-setting/pdf/ui/form/number-input.ui";
 
 type AnswerType = "min" | "max" | "exact" | "confirm";
@@ -41,12 +42,13 @@ const normalizeDataToForm = (data?: Partial<SavePayload> | null): FormState => (
 });
 
 const FreeTextForm: React.FC<ItemConfProps> = React.forwardRef(({ data, onSaveSetting }, ref) => {
+  const {t} = useTranslation();
+  const ns = "modules.docs_setting.pdf.free_text_form";
+  
   // @ts-ignore
   const [form, setForm] = useState<FormState>(() => normalizeDataToForm(data?.setting || null));
-  // Error state theo field
   const [errors, setErrors] = useState<Record<string, string>>({});
   
-  // Đồng bộ khi props.data thay đổi (chỉ set khi thực sự khác để tránh re-render thừa)
   useEffect(() => {
     //@ts-ignore
     const next = normalizeDataToForm(data?.setting);
@@ -63,7 +65,6 @@ const FreeTextForm: React.FC<ItemConfProps> = React.forwardRef(({ data, onSaveSe
     });
   }, [data]);
   
-  // Helpers
   const updateForm = (patch: Partial<FormState>) => {
     setForm((prev) => ({...prev, ...patch}));
   };
@@ -77,14 +78,14 @@ const FreeTextForm: React.FC<ItemConfProps> = React.forwardRef(({ data, onSaveSe
   };
   
   const handleInputChange = (name: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement>) => {
-      updateForm({ [name]: e.target.value } as Partial<FormState>);
+    updateForm({[name]: e.target.value} as Partial<FormState>);
     clearFieldError(name);
-    };
+  };
   
-  const handleNumberInputChange = (name: keyof FormState) => (n: Number) => {
-      updateForm({ [name]: n } as Partial<FormState>);
-      clearFieldError(name);
-    };
+  const handleNumberInputChange = (name: keyof FormState) => (n: number) => {
+    updateForm({[name]: n} as Partial<FormState>);
+    clearFieldError(name);
+  };
   
   const handleAnswerTypeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     updateForm({ answerType: e.target.value as AnswerType });
@@ -110,63 +111,54 @@ const FreeTextForm: React.FC<ItemConfProps> = React.forwardRef(({ data, onSaveSe
       num > 0 &&
       num <= Number.MAX_SAFE_INTEGER
     );
-  }
-  
+  };
   
   const validate = (f: FormState) => {
     const errs: Record<string, string> = {};
     
-    // validate title
-    if (!f?.title?.trim()) errs.title = "Vui lòng nhập tiêu đề";
-    else if (f.title.length > 400) errs.title = "Tựa đề không được vượt quá 400 ký tự";
+    if (!f?.title?.trim()) errs.title = t(`${ns}.errors.title_required`);
+    else if (f.title.length > 400) errs.title = t(`${ns}.errors.title_too_long`, {max: 400});
     
-    // validate theo answerType
     if (f?.answerType === "min") {
-      if (!checkPositive(f.minChar)) errs.minChar = "Vui lòng nhập số ký tự tối thiểu";
-      if (Number(f.minChar) >= Number.MAX_SAFE_INTEGER) {
-        errs.minChar = "Vui lòng nhập số ký tự hợp lệ (quá lớn)";
-      }
+      if (!checkPositive(f.minChar)) errs.minChar = t(`${ns}.errors.min_char_required`);
+      if (Number(f.minChar) >= Number.MAX_SAFE_INTEGER)
+        errs.minChar = t(`${ns}.errors.char_invalid`);
     }
     
     if (f?.answerType === "max") {
-      if (!checkPositive(f.maxChar)) errs.maxChar = "Vui lòng nhập số ký tự tối đa";
-      if (Number(f.maxChar) >= Number.MAX_SAFE_INTEGER) {
-        errs.maxChar = "Vui lòng nhập số ký tự hợp lệ (quá lớn)";
-      }
+      if (!checkPositive(f.maxChar)) errs.maxChar = t(`${ns}.errors.max_char_required`);
+      if (Number(f.maxChar) >= Number.MAX_SAFE_INTEGER)
+        errs.maxChar = t(`${ns}.errors.char_invalid`);
     }
     
     if (f?.answerType === "exact") {
       const numMin = parseInt(f.minChar, 10);
       const numMax = parseInt(f.maxChar, 10);
       
-      if (!checkPositive(f.minChar)) errs.minChar = "Vui lòng nhập số ký tự tối thiểu";
-      if (!checkPositive(f.maxChar)) errs.maxChar = "Vui lòng nhập số ký tự tối đa";
-      if (checkPositive(f.minChar) && checkPositive(f.maxChar) && numMax <= numMin) {
-        errs.maxChar = "Ký tự tối đa phải lớn hơn ký tự tối thiểu";
-      }
+      if (!checkPositive(f.minChar)) errs.minChar = t(`${ns}.errors.min_char_required`);
+      if (!checkPositive(f.maxChar)) errs.maxChar = t(`${ns}.errors.max_char_required`);
+      if (checkPositive(f.minChar) && checkPositive(f.maxChar) && numMax <= numMin)
+        errs.maxChar = t(`${ns}.errors.max_char_less_than_min`);
       
-      if (Number(f.minChar) >= Number.MAX_SAFE_INTEGER) {
-        errs.minChar = "Vui lòng nhập số ký tự hợp lệ (quá lớn)";
-      }
-      if (Number(f.maxChar) >= Number.MAX_SAFE_INTEGER) {
-        errs.maxChar = "Vui lòng nhập số ký tự hợp lệ (quá lớn)";
-      }
+      if (Number(f.minChar) >= Number.MAX_SAFE_INTEGER)
+        errs.minChar = t(`${ns}.errors.char_invalid`);
+      if (Number(f.maxChar) >= Number.MAX_SAFE_INTEGER)
+        errs.maxChar = t(`${ns}.errors.char_invalid`);
     }
     
     if (f.answerType === "confirm" && f.confirmType === "number") {
       const vMin = parseInt(f.minValue, 10);
       const vMax = parseInt(f.maxValue, 10);
-      if (f.minValue && !checkPositive(f.minValue)) errs.minValue = "Giá trị nhỏ nhất phải > 0";
-      if (f.maxValue && !checkPositive(f.maxValue)) errs.maxValue = "Giá trị lớn nhất phải > 0";
-      if (vMin && vMax && vMax <= vMin) {
-        errs.maxValue = "Giá trị lớn nhất phải lớn hơn giá trị nhỏ nhất";
-      }
-      if (Number(f.minValue) >= Number.MAX_SAFE_INTEGER) {
-        errs.minValue = "Giá trị nhỏ nhất quá lớn, vui lòng nhập lại";
-      }
-      if (Number(f.maxValue) >= Number.MAX_SAFE_INTEGER) {
-        errs.maxValue = "Giá trị lớn nhất quá lớn, vui lòng nhập lại";
-      }
+      if (f.minValue && !checkPositive(f.minValue))
+        errs.minValue = t(`${ns}.errors.min_value_positive`);
+      if (f.maxValue && !checkPositive(f.maxValue))
+        errs.maxValue = t(`${ns}.errors.max_value_positive`);
+      if (vMin && vMax && vMax <= vMin)
+        errs.maxValue = t(`${ns}.errors.max_value_greater_than_min`);
+      if (Number(f.minValue) >= Number.MAX_SAFE_INTEGER)
+        errs.minValue = t(`${ns}.errors.min_value_too_large`);
+      if (Number(f.maxValue) >= Number.MAX_SAFE_INTEGER)
+        errs.maxValue = t(`${ns}.errors.max_value_too_large`);
     }
     
     return errs;
@@ -185,7 +177,7 @@ const FreeTextForm: React.FC<ItemConfProps> = React.forwardRef(({ data, onSaveSe
         confirm_type: form.confirmType,
         min_value: form.minValue,
         max_value: form.maxValue,
-      }
+      };
       onSaveSetting(dataSaving);
       return dataSaving;
     }
@@ -198,15 +190,15 @@ const FreeTextForm: React.FC<ItemConfProps> = React.forwardRef(({ data, onSaveSe
   }));
   
   const { title, answerType, minChar, maxChar, confirmType, minValue, maxValue } = form;
-
+  
   return (
-    <Box sx={{textAlign: "left", width: '100%'}}>
+    <Box sx={{textAlign: "left", width: "100%"}}>
       <TextField
         fullWidth
         variant="outlined"
-        label="Tựa đề *"
+        label={t(`${ns}.fields.title_label`)}
         size="small"
-        placeholder="Nhập tiêu đề"
+        placeholder={t(`${ns}.fields.title_placeholder`)}
         value={title}
         onChange={handleInputChange("title")}
         error={!!errors.title}
@@ -215,25 +207,25 @@ const FreeTextForm: React.FC<ItemConfProps> = React.forwardRef(({ data, onSaveSe
       
       <Box sx={{ mt: 3 }}>
         <FormLabel sx={{ fontWeight: "bold", color: "black" }}>
-          Hình thức trả lời
+          {t(`${ns}.fields.answer_type_label`)}
         </FormLabel>
-        <RadioGroup
-          value={answerType}
-          onChange={handleAnswerTypeChange}
-          sx={{ mt: 1 }}
-        >
+        <RadioGroup value={answerType} onChange={handleAnswerTypeChange} sx={{mt: 1}}>
           <Grid container rowSpacing={0}>
             <Grid size={6}>
-              <FormControlLabel value="min" control={<Radio />} label="Số ký tự tối thiểu" />
+              <FormControlLabel value="min" control={<Radio/>} label={t(`${ns}.options.min`)}/>
             </Grid>
             <Grid size={6}>
-              <FormControlLabel value="max" control={<Radio />} label="Số ký tự tối đa" />
+              <FormControlLabel value="max" control={<Radio/>} label={t(`${ns}.options.max`)}/>
             </Grid>
             <Grid size={6}>
-              <FormControlLabel value="exact" control={<Radio />} label="Chọn số ký tự" />
+              <FormControlLabel value="exact" control={<Radio/>} label={t(`${ns}.options.exact`)}/>
             </Grid>
             <Grid size={6}>
-              <FormControlLabel value="confirm" control={<Radio />} label="Xác nhận nội dung" />
+              <FormControlLabel
+                value="confirm"
+                control={<Radio/>}
+                label={t(`${ns}.options.confirm`)}
+              />
             </Grid>
           </Grid>
         </RadioGroup>
@@ -245,7 +237,7 @@ const FreeTextForm: React.FC<ItemConfProps> = React.forwardRef(({ data, onSaveSe
             <NumericInput
               fullWidth
               type="number"
-              label="Nhập số ký tự tối thiểu"
+              label={t(`${ns}.fields.min_char_label`)}
               value={minChar}
               onChange={handleNumberInputChange("minChar")}
               disabled={answerType === "max"}
@@ -259,7 +251,7 @@ const FreeTextForm: React.FC<ItemConfProps> = React.forwardRef(({ data, onSaveSe
             <NumericInput
               fullWidth
               type="number"
-              label="Nhập số ký tự tối đa"
+              label={t(`${ns}.fields.max_char_label`)}
               value={maxChar}
               size="small"
               onChange={handleNumberInputChange("maxChar")}
@@ -275,24 +267,35 @@ const FreeTextForm: React.FC<ItemConfProps> = React.forwardRef(({ data, onSaveSe
       {answerType === "confirm" && (
         <Box sx={{ mt: 2 }}>
           <Divider component="p" />
-          <RadioGroup
-            sx={{ mt: 1 }}
-            row
-            value={confirmType}
-            onChange={handleConfirmTypeChange}
-          >
+          <RadioGroup sx={{mt: 1}} row value={confirmType} onChange={handleConfirmTypeChange}>
             <Grid container rowSpacing={0}>
               <Grid size={6}>
-                <FormControlLabel value="email" control={<Radio />} label="Địa chỉ email" />
+                <FormControlLabel
+                  value="email"
+                  control={<Radio/>}
+                  label={t(`${ns}.fields.confirm_type_email`)}
+                />
               </Grid>
               <Grid size={6}>
-                <FormControlLabel value="phone" control={<Radio />} label="Số điện thoại" />
+                <FormControlLabel
+                  value="phone"
+                  control={<Radio/>}
+                  label={t(`${ns}.fields.confirm_type_phone`)}
+                />
               </Grid>
               <Grid size={6}>
-                <FormControlLabel value="date" control={<Radio />} label="Định dạng ngày" />
+                <FormControlLabel
+                  value="date"
+                  control={<Radio/>}
+                  label={t(`${ns}.fields.confirm_type_date`)}
+                />
               </Grid>
               <Grid size={6}>
-                <FormControlLabel value="number" control={<Radio />} label="Number (mặc định)" />
+                <FormControlLabel
+                  value="number"
+                  control={<Radio/>}
+                  label={t(`${ns}.fields.confirm_type_number`)}
+                />
               </Grid>
             </Grid>
           </RadioGroup>
@@ -303,7 +306,7 @@ const FreeTextForm: React.FC<ItemConfProps> = React.forwardRef(({ data, onSaveSe
                 <NumericInput
                   fullWidth
                   type="number"
-                  label="Giá trị nhỏ nhất"
+                  label={t(`${ns}.fields.min_value_label`)}
                   size="small"
                   value={minValue}
                   onChange={handleNumberInputChange("minValue")}
@@ -316,7 +319,7 @@ const FreeTextForm: React.FC<ItemConfProps> = React.forwardRef(({ data, onSaveSe
                 <NumericInput
                   fullWidth
                   type="number"
-                  label="Giá trị lớn nhất"
+                  label={t(`${ns}.fields.max_value_label`)}
                   size="small"
                   value={maxValue}
                   onChange={handleNumberInputChange("maxValue")}
