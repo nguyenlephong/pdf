@@ -3,9 +3,16 @@ import "./pdf.style.scss";
 import PDFViewer from "./ui/pdf-viewer.ui";
 import FormConfigPanel from "./ui/form-config-panel.ui";
 import PDFFiller from "./ui/pdf-filler";
-import {FormFieldBox, FormFieldSetting, PDFSettingData, CustomerAttributeData, ToolSettingConfig} from "./types/pdf-setting.type";
+import {
+  FormFieldBox,
+  FormFieldSetting,
+  PDFSettingData,
+  CustomerAttributeData,
+  ToolSettingConfig
+} from "./types/pdf-setting.type";
 import {PDFSettingService} from "./services/pdf-setting.service";
-import {Grid} from "@mui/material";
+import {Box, Grid} from "@mui/material";
+import LinearProgress from '@mui/material/LinearProgress';
 
 interface IProps {
   pdfUrl?: string; // CDN URL or local file path
@@ -18,10 +25,13 @@ interface IProps {
 
 function PDFSettingPage(props: IProps) {
   const {pdfUrl, settingData, onSaveSetting, onChangeSetting, attributes, config} = props;
+  
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [pageActive, setPageActive] = useState<number>(0);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [formFields, setFormFields] = useState<FormFieldSetting[]>([]);
   const [selectedField, setSelectedField] = useState<FormFieldSetting | null>(null);
+  
   
   React.useEffect(() => {
     if (pdfUrl) handlePDFLoad(pdfUrl);
@@ -39,7 +49,12 @@ function PDFSettingPage(props: IProps) {
   }, [settingData]);
   
   React.useEffect(() => {
-    if (onChangeSetting) onChangeSetting({form_fields: formFields, ts: Date.now().toString(), name: 'config.json', version: '1.0'});
+    if (onChangeSetting) onChangeSetting({
+      form_fields: formFields,
+      ts: Date.now().toString(),
+      name: 'config.json',
+      version: '1.0'
+    });
   }, [formFields]);
   
   const handlePDFLoad = async (input: File | string) => {
@@ -146,55 +161,69 @@ function PDFSettingPage(props: IProps) {
   };
   
   return (
-    <div className="mfe-pdf-setting-page">
-      <Grid container className={"main-container"} rowSpacing={1}>
-        <Grid size={{ xs: 12, md: 6, xl: 8 }}>
-          <div className="pdf-container">
-            <PDFViewer
-              pdfFile={pdfFile}
-              setPageActive={setPageActive}
-              formFields={formFields}
-              onAddField={handleAddField}
-              onSelectField={handleSelectField}
-              selectedField={selectedField}
-              onPDFLoad={handlePDFLoad}
-              onUpdateBoxField={handleUpdateBoxField}
-              onDeleteField={handleDeleteField}
-              config={config}
-            />
-          </div>
-        </Grid>
-        
-        <Grid size={{ xs: 12, md: 6, xl: 4 }}>
-          <div className="pdf-config-container">
-            <FormConfigPanel
-              selectedField={selectedField}
-              formFields={formFields}
-              pdfFile={pdfFile}
-              pageActive={pageActive}
-              onUpdateField={handleUpdateField}
-              onDeleteField={handleDeleteField}
-              onSelectField={handleSelectField}
-              onImportConfig={handleImportConfig}
-              onLoadPDFWithConfig={handleLoadPDFWithConfig}
-              onSaveSetting={onSaveSetting}
-              attributes={attributes}
-              config={config}
-            />
-            
-            {config?.enablePDFFillerToolBox && (
-              <PDFFiller
+    <React.Fragment>
+      {isLoading && (
+        <Box sx={{width: '100%'}}>
+          <LinearProgress/>
+        </Box>
+      )}
+      <div
+        className="mfe-pdf-setting-page"
+        style={{
+          visibility: isLoading ? 'hidden' : 'visible'
+        }}
+      >
+        <Grid container className={"main-container"} rowSpacing={1}>
+          
+          <Grid size={{xs: 12, md: 6, xl: 8}}>
+            <div className="pdf-container">
+              <PDFViewer
                 pdfFile={pdfFile}
+                setPageActive={setPageActive}
                 formFields={formFields}
-                onPDFGenerated={(pdfBytes) => {
-                  console.log("PDF generated:", pdfBytes.length, "bytes");
-                }}
+                onAddField={handleAddField}
+                onSelectField={handleSelectField}
+                selectedField={selectedField}
+                onPDFLoad={handlePDFLoad}
+                onUpdateBoxField={handleUpdateBoxField}
+                onDeleteField={handleDeleteField}
+                config={config}
+                onUpdateLoading={setIsLoading}
               />
-            )}
-          </div>
+            </div>
+          </Grid>
+          
+          <Grid size={{xs: 12, md: 6, xl: 4}}>
+            <div className="pdf-config-container">
+              <FormConfigPanel
+                selectedField={selectedField}
+                formFields={formFields}
+                pdfFile={pdfFile}
+                pageActive={pageActive}
+                onUpdateField={handleUpdateField}
+                onDeleteField={handleDeleteField}
+                onSelectField={handleSelectField}
+                onImportConfig={handleImportConfig}
+                onLoadPDFWithConfig={handleLoadPDFWithConfig}
+                onSaveSetting={onSaveSetting}
+                attributes={attributes}
+                config={config}
+              />
+              
+              {config?.enablePDFFillerToolBox && (
+                <PDFFiller
+                  pdfFile={pdfFile}
+                  formFields={formFields}
+                  onPDFGenerated={(pdfBytes) => {
+                    console.log("PDF generated:", pdfBytes.length, "bytes");
+                  }}
+                />
+              )}
+            </div>
+          </Grid>
         </Grid>
-      </Grid>
-    </div>
+      </div>
+    </React.Fragment>
   );
 }
 

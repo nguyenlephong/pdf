@@ -31,6 +31,7 @@ interface PDFViewerProps {
   config?: ToolSettingConfig;
   pdfFile: File | null;
   setPageActive: (page: number) => void;
+  onUpdateLoading: (isLoading: boolean) => void;
   formFields: FormFieldSetting[];
   onAddField: (field: FormFieldSetting) => void;
   onSelectField: (field: FormFieldSetting | null) => void;
@@ -51,6 +52,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
     onPDFLoad,
     onUpdateBoxField,
     onDeleteField,
+    onUpdateLoading,
     config,
   } = props;
   const [numPages, setNumPages] = useState<number>(0);
@@ -114,9 +116,10 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
   React.useEffect(() => {
     if (pdfFile && !loading && isFirstRender) {
       renderThumbnails(pdfFile).then();
-      setIsFirstRender(false)
+      setIsFirstRender(false);
+      onUpdateLoading(false);
     }
-  }, [pdfFile, loading, isFirstRender])
+  }, [pdfFile, loading, isFirstRender, onUpdateLoading])
   
   const handlePageRenderSuccess = React.useCallback((page: any) => {
     if (!pageOriginalWidth) {
@@ -531,6 +534,18 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
     URL.revokeObjectURL(url);
   }
   
+  const handleNextPage = () => {
+    const nextPage = Math.min(numPages, pageNumber + 1)
+    setPageNumber(nextPage);
+    setPageActive(nextPage);
+  }
+  
+  const handlePrevPage = () => {
+    const prevPage = Math.max(1, pageNumber - 1)
+    setPageNumber(prevPage);
+    setPageActive(prevPage);
+  }
+  
   if (!pdfFile && !loading) {
     return (
       <div className="file-upload" {...getRootProps()}>
@@ -565,7 +580,13 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
   }
   
   return (
-    <Stack className="pdf-viewer" spacing={0}>
+    <Stack 
+      className="pdf-viewer"
+      spacing={0} 
+      style={{
+        visibility: loading && isFirstRender ? 'hidden' : 'visible'
+      }}
+    >
       {config?.enablePDFViewerToolBar && (
         <Box>
           <div className="pdf-controls-bar">
@@ -664,10 +685,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
           
           <IconButton
             color="primary"
-            onClick={() => {
-              setPageNumber(Math.max(1, pageNumber - 1))
-              setPageActive(Math.max(1, pageNumber - 1));
-            }}
+            onClick={handlePrevPage}
             disabled={pageNumber <= 1}
             sx={{
               border: '1px solid',
@@ -812,10 +830,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
           
           <IconButton
             color="primary"
-            onClick={() => {
-              setPageNumber(Math.min(numPages, pageNumber + 1))
-              setPageActive(Math.min(numPages, pageNumber + 1))
-            }}
+            onClick={handleNextPage}
             disabled={pageNumber >= numPages}
             sx={{
               border: '1px solid',
