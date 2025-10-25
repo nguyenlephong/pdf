@@ -63,6 +63,7 @@
     ]
   },
   "devDependencies": {
+    "@angular/core": "^20.3.7",
     "@emotion/babel-plugin": "^11.13.5"
   }
 }

@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "experimentalDecorators": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "target": "ES2022",
     "useDefineForClassFields": true,
@@ -9,7 +10,8 @@
     "skipLibCheck": true,
 
     /* Bundler mode */
-    "moduleResolution": "node", // customized for bundlers to build with VITE
+    "moduleResolution": "node", // customized for development with VITE
+//    "moduleResolution": "bundler", // customized for bundlers to build with VITE
     "allowSyntheticDefaultImports": true,
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": false,
@@ -31,6 +33,15 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
+
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "~/*": [
+        "./src/*"
+      ]
+    }
   },
   "include": ["src"]
 }
