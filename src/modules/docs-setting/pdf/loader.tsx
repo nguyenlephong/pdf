@@ -1,8 +1,7 @@
 import ReactDOM, {createRoot} from "react-dom/client";
 import PDFSettingPage from "./pdf.ui";
+import createCache from '@emotion/cache';
 import {CacheProvider} from '@emotion/react'
-import {ConfigProvider as AntConfigProvider} from 'antd'
-import muiCache from '../../../emotion-cache'
 import '@/i18n';
 let root: ReactDOM.Root | null = null;
 
@@ -24,16 +23,21 @@ export function mount(target: HTMLElement | string, props?: any) {
     throw new Error(`[React MFE] mount: container not found (${target})`);
   }
   
+  // If inside shadow DOM → attach styles there
+  const shadowRoot = container.getRootNode() as ShadowRoot | Document;
+  const cache = createCache({
+    key: 'mui',
+    prepend: true,
+    // @ts-ignore
+    container: (shadowRoot instanceof ShadowRoot ? shadowRoot : document)?.head || shadowRoot,
+  });
+  
+  
   // If container belongs to an iframe/shadow root, use that container's ownerDocument for createRoot
   // createRoot accepts an Element; React will operate on the correct document context.
   root = createRoot(container);
-  root.render(
-    <CacheProvider value={muiCache}>
-      <AntConfigProvider>
-        <PDFSettingPage {...props} />
-      </AntConfigProvider>
-    </CacheProvider>
-  );
+  // @ts-ignore
+  root.render(<CacheProvider value={cache}><PDFSettingPage {...props} /></CacheProvider>);
 }
 
 export function unmount(_target?: HTMLElement | string) {

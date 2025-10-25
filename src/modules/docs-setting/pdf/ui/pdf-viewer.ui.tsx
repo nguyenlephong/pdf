@@ -60,7 +60,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
   const [pageOriginalHeight, setPageOriginalHeight] = React.useState<number | 'unset'>(0);
   const [loading, setLoading] = React.useState(true);
   
-  
+  const domRef = React.useRef<HTMLDivElement>(null);
   const pageRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -98,7 +98,10 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
   }, [pageOriginalWidth]);
   
   React.useEffect(() => {
-    const wrappers = document.querySelectorAll('#pdf-page-thumbnails .pdf-thumbnail-canvas');
+    const rootNode = domRef.current?.getRootNode() as ShadowRoot | Document;
+    const scope = rootNode instanceof ShadowRoot ? rootNode : document;
+    
+    const wrappers = scope.querySelectorAll('#pdf-page-thumbnails .pdf-thumbnail-canvas');
     wrappers.forEach((el, index) => {
       if (index + 1 === pageNumber) el.classList.add('active');
       else el.classList.remove('active');
@@ -461,51 +464,56 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
   };
   
   const renderThumbnails = async (file: File) => {
+    const rootNode = domRef.current?.getRootNode() as ShadowRoot | Document;
+    const scope = rootNode instanceof ShadowRoot ? rootNode : document;
+    const doc = scope instanceof ShadowRoot ? scope.ownerDocument : scope;
     
-    const container = document.getElementById('pdf-page-thumbnails');
+    const container = scope.getElementById('pdf-page-thumbnails');
     if (!container) return;
     container.innerHTML = '';
     
-    let url = null;
+    // handle both File or remote url case
+    let url: string | null = null;
     try {
-      url = URL.createObjectURL(file)
-    } catch (e) {
+      url = URL.createObjectURL(file);
+    } catch {
       // @ts-ignore
-      url = file?.['url']! || '';
+      url = file?.['url'] || '';
     }
-    const pdf = await pdfjs.getDocument(url).promise;
     
+    const pdf = await pdfjs.getDocument(url).promise;
     const scale = 0.2;
     
-    const fragment = document.createDocumentFragment();
+    const fragment = doc.createDocumentFragment();
+    
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
-      const viewport = page.getViewport({scale});
+      const viewport = page.getViewport({ scale });
       
-      const wrapper = document.createElement('div');
+      const wrapper = doc.createElement('div');
       wrapper.className = 'pdf-thumbnail-wrapper';
       
-      const pageNumberText = document.createElement('div');
+      const pageNumberText = doc.createElement('div');
       pageNumberText.className = 'pdf-thumbnail-page-number';
       pageNumberText.textContent = i.toString();
       wrapper.appendChild(pageNumberText);
       
-      const canvasWrapper = document.createElement('div');
+      const canvasWrapper = doc.createElement('div');
       canvasWrapper.className = 'pdf-thumbnail-canvas';
       if (pageNumber === i) canvasWrapper.classList.add('active');
       
-      const canvas = document.createElement('canvas');
+      const canvas = doc.createElement('canvas');
       const context = canvas.getContext('2d')!;
       canvas.width = viewport.width;
       canvas.height = viewport.height;
       
-      //@ts-ignore
-      await page.render({canvasContext: context, viewport}).promise;
+      await page.render({ canvasContext: context, viewport }).promise;
       
       canvas.addEventListener('click', () => {
-        document
-          .querySelectorAll('#pdf-page-thumbnails .pdf-thumbnail-canvas')
-          .forEach((el) => el.classList.remove('active'));
+        const allCanvases = scope.querySelectorAll(
+          '#pdf-page-thumbnails .pdf-thumbnail-canvas'
+        );
+        allCanvases.forEach((el) => el.classList.remove('active'));
         
         canvasWrapper.classList.add('active');
         setPageNumber(i);
@@ -519,8 +527,10 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
     
     container.appendChild(fragment);
     
-    URL.revokeObjectURL(url);
-  }
+    if (url && url.startsWith('blob:')) {
+      URL.revokeObjectURL(url);
+    }
+  };
   
   const handleNextPage = () => {
     const nextPage = Math.min(numPages, pageNumber + 1)
@@ -569,6 +579,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
   
   return (
     <Stack 
+      ref={domRef}
       className="pdf-viewer"
       spacing={0} 
       style={{
