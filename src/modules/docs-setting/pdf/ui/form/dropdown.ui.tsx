@@ -3,6 +3,7 @@ import {Box, IconButton, TextField, Typography} from "@mui/material";
 import {AddCircleOutlineOutlined, RemoveCircleOutlineOutlined} from "@mui/icons-material";
 import {useTranslation} from "react-i18next";
 import {FIELD_VALUE_TYPE} from "@/modules/docs-setting/pdf/pdf.const";
+import {FormFieldSetting} from "@/modules/docs-setting/pdf/types/pdf-setting.type";
 
 type SavePayload = {
   title: string;
@@ -10,7 +11,7 @@ type SavePayload = {
 };
 
 type DropdownFormProps = {
-  data?: Partial<SavePayload> | null;
+  data?: Partial<FormFieldSetting> | null;
   onSaveSetting: (data: SavePayload) => void;
 };
 

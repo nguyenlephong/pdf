@@ -3,6 +3,7 @@ import {Box, Divider, FormControlLabel, FormLabel, Grid, Radio, RadioGroup, Text
 import {useTranslation} from "react-i18next";
 import NumericInput from "@/modules/docs-setting/pdf/ui/form/number-input.ui";
 import {FIELD_VALUE_TYPE} from "@/modules/docs-setting/pdf/pdf.const";
+import {FormFieldSetting} from "@/modules/docs-setting/pdf/types/pdf-setting.type";
 
 type AnswerType = "min" | "max" | "exact" | "confirm";
 type ConfirmType = "email" | "phone" | "date" | "number";
@@ -19,7 +20,7 @@ type SavePayload = {
 
 type ItemConfProps = {
   onSaveSetting: (data: SavePayload) => void;
-  data?: Partial<SavePayload> | null;
+  data?: Partial<FormFieldSetting> | null;
 };
 
 type FormState = {
