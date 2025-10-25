@@ -5,24 +5,12 @@ import {FormFieldBox, FormFieldSetting, ToolSettingConfig} from "../types/pdf-se
 import FormFieldOverlay from "./form-field-overlay.ui";
 import {DndContext, DragEndEvent} from "@dnd-kit/core";
 import {KeyboardArrowLeft, KeyboardArrowRight} from '@mui/icons-material';
-import { pdfLogger } from '@/modules/docs-setting/pdf/services/logger.service';
-import {
-  Box,
-  Button,
-  Checkbox,
-  CircularProgress,
-  FormControl,
-  FormControlLabel,
-  IconButton,
-  InputLabel,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
-  Stack,
-  TextField,
-  Typography
-} from '@mui/material';
+import {pdfLogger} from '@/modules/docs-setting/pdf/services/logger.service';
+import {Box, Button, CircularProgress, IconButton, Stack, Typography} from '@mui/material';
 import {useTranslation} from "react-i18next";
+import GridControls from "@/modules/docs-setting/pdf/ui/helper/grid-controls.ui";
+import OverlapControl from "@/modules/docs-setting/pdf/ui/helper/overlap-control.ui";
+import DraggableInput from "@/modules/docs-setting/pdf/ui/helper/draggable-input.ui";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -69,7 +57,7 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
   const [dragOverlapBehavior, setDragOverlapBehavior] = useState<'snap' | 'return'>('return');
   const [dragOverField, setDragOverField] = useState<string | null>(null);
   const [pageOriginalWidth, setPageOriginalWidth] = React.useState<number>(0);
-  const [pageOriginalHeight, setPageOriginalHeight] = React.useState<number>(0);
+  const [pageOriginalHeight, setPageOriginalHeight] = React.useState<number | 'unset'>(0);
   const [loading, setLoading] = React.useState(true);
   
   
@@ -128,17 +116,12 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
   
   const handlePageRenderSuccess = React.useCallback((page: any) => {
     if (!pageOriginalWidth) {
-      const originalWidth = page.originalWidth || page.viewport.width;
+      const originalWidth = page.originalWidth || page.viewport?.width;
       setPageOriginalWidth(originalWidth);
     }
-    
-    if (!pageOriginalHeight) {
-      const originalHeight = page.originalHeight || page.viewport.height;
-      setPageOriginalHeight(originalHeight);
-    }
+    setPageOriginalHeight(page?.height);
     setLoading(false)
   }, [pageOriginalWidth, pageOriginalHeight]);
-  
   
   const handleDragStart = (event: any) => {
     // Select the field when starting to drag
@@ -859,130 +842,4 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
 };
 
 export default PdfViewerUi;
-
-
-type DragOverlapBehavior = 'snap' | 'return';
-
-interface OverlapControlProps {
-  dragOverlapBehavior: DragOverlapBehavior;
-  setDragOverlapBehavior: (value: DragOverlapBehavior) => void;
-}
-
-const OverlapControl: React.FC<OverlapControlProps> = (props) => {
-  const {
-    dragOverlapBehavior,
-    setDragOverlapBehavior,
-  } = props
-  const handleChange = (e: SelectChangeEvent<DragOverlapBehavior>) => {
-    setDragOverlapBehavior(e.target.value as DragOverlapBehavior);
-  };
-  
-  return (
-    <Box display="flex" alignItems="center" gap={1.5}>
-      <Typography variant="body2">On Overlap:</Typography>
-      
-      <FormControl size="small" sx={{minWidth: 180}}>
-        <InputLabel id="overlap-select-label">Behavior</InputLabel>
-        <Select
-          labelId="overlap-select-label"
-          value={dragOverlapBehavior}
-          label="Behavior"
-          onChange={handleChange}
-        >
-          <MenuItem value="snap">Snap to Side</MenuItem>
-          <MenuItem value="return">Return to Original</MenuItem>
-        </Select>
-      </FormControl>
-    </Box>
-  );
-};
-
-interface GridControlsProps {
-  snapToGrid: boolean;
-  setSnapToGrid: (checked: boolean) => void;
-  gridSize: number;
-  setGridSize: (size: number) => void;
-}
-
-const GridControls: React.FC<GridControlsProps> = (props) => {
-  const {
-    snapToGrid,
-    setSnapToGrid,
-    gridSize,
-    setGridSize,
-  } = props
-  return (
-    <Box display="flex" alignItems="center" gap={1.5}>
-      {/* Checkbox for Snap to Grid */}
-      <FormControlLabel
-        control={
-          <Checkbox
-            checked={snapToGrid}
-            onChange={(e) => setSnapToGrid(e.target.checked)}
-            size="small"
-          />
-        }
-        label={<Typography variant="body2">Snap to Grid</Typography>}
-      />
-      
-      {/* Grid Size input, visible only when snapToGrid is true */}
-      {snapToGrid && (
-        <Box display="flex" alignItems="center" gap={1}>
-          <Typography variant="body2">Size:</Typography>
-          <TextField
-            type="number"
-            value={gridSize}
-            onChange={(e) => setGridSize(Math.max(5, parseInt(e.target.value) || 10))}
-            inputProps={{
-              min: 5,
-              max: 50,
-              style: {textAlign: 'center', fontSize: 12},
-            }}
-            size="small"
-            sx={{width: 70}}
-          />
-        </Box>
-      )}
-    </Box>
-  );
-};
-
-
-const DraggableInput: React.FC = () => {
-  const handleDragStart = (e: React.DragEvent<HTMLInputElement>) => {
-    e.dataTransfer.setData('application/x-field-type', 'text');
-    
-    // Create custom drag preview
-    const img = document.createElement('div');
-    img.style.width = '120px';
-    img.style.height = '24px';
-    img.style.background = '#1976d2'; // MUI primary color
-    img.style.color = 'white';
-    img.style.display = 'flex';
-    img.style.alignItems = 'center';
-    img.style.justifyContent = 'center';
-    img.style.fontSize = '12px';
-    img.style.borderRadius = '4px';
-    img.textContent = 'Text Field';
-    document.body.appendChild(img);
-    
-    e.dataTransfer.setDragImage(img, 60, 12);
-    setTimeout(() => document.body.removeChild(img), 0);
-  };
-  
-  return (
-    <div
-      draggable
-      onDragStart={handleDragStart}
-      style={{
-        border: '1px solid #d6d6d7',
-        borderRadius: 4,
-        height: 20,
-        cursor: 'grab'
-      }}
-    >
-    
-    </div>
-  )
-};
 
