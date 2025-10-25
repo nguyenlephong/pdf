@@ -3,79 +3,117 @@
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
-    "edit": "Edit",
-    "close": "Close",
-    "confirm": "Confirm",
-    "yes": "Yes",
-    "no": "No",
-    "ok": "OK",
     "back": "Back",
     "next": "Next",
-    "loading": "Loading...",
-    "search": "Search"
+    "loading": "Loading..."
   },
   "modules": {
     "docs_setting": {
       "pdf": {
-        "toolbar": {
-          "title": "PDF Tools",
-          "zoom_in": "Zoom In",
-          "zoom_out": "Zoom Out",
-          "fit_to_screen": "Fit to Screen",
-          "add_field": "Add Field",
-          "delete_field": "Delete Field"
-        },
         "viewer": {
-          "page_label": "Page {{current}} of {{total}}",
-          "loading": "Loading PDF...",
-          "no_file": "No PDF file selected",
-          "upload_button": "Choose PDF File"
-        },
-        "field_types": {
-          "text": "Text Field",
-          "number": "Number Field",
-          "date": "Date Field",
-          "email": "Email Field"
+          "title": "Shape",
+          "description": "Drag and drop a shape onto the document"
         },
         "field_opts": {
+          "text": {
+            "conf_title": "Select position and fill configuration",
+            "position": "Position {{position}}",
+            "type_info": "Information type *"
+          },
           "system": {
             "sign_date": {
               "label": "System - Signing Date",
-              "description": "The app automatically retrieves the current date when signing information and does not allow editing."
+              "description": "The application automatically retrieves the current date when signing and does not allow editing."
             },
             "cccd_number": {
               "label": "System - ID Number (CCCD) on Authentication",
-              "description": "The app automatically retrieves the ID number from the user's digital certificate during authentication and does not allow editing."
+              "description": "The application automatically retrieves the ID number from the user's digital certificate during authentication and does not allow editing."
             },
             "cccd_name": {
               "label": "System - Name on ID (CCCD) on Authentication",
-              "description": "The app automatically retrieves the name from the user's digital certificate (CCCD) during authentication and does not allow editing."
+              "description": "The application automatically retrieves the full name from the user's digital certificate (CCCD) during authentication and does not allow editing."
             },
             "cccd_address": {
               "label": "System - Address on ID (CCCD) on Authentication",
-              "description": "The app automatically retrieves the address from the user's digital certificate (CCCD) during authentication and does not allow editing."
+              "description": "The application automatically retrieves the address from the user's digital certificate (CCCD) during authentication and does not allow editing."
             }
           },
           "base": {
             "customer_code": {
               "label": "Base Data - Customer Code",
-              "description": "The app automatically retrieves the customer (brand) code displayed on the document and does not allow editing."
+              "description": "The application automatically retrieves the customer (brand) code displayed on the document and does not allow editing."
             },
             "customer_name": {
               "label": "Base Data - Customer Name",
-              "description": "The app automatically retrieves the customer (brand) name displayed on the document and does not allow editing."
+              "description": "The application automatically retrieves the customer (brand) name displayed on the document and does not allow editing."
             },
             "customer_address": {
-              "label": "Base Data - Address",
-              "description": "The app automatically retrieves the customer (brand) address displayed on the document and does not allow editing."
+              "label": "Base Data - Customer Address",
+              "description": "The application automatically retrieves the customer (brand) address displayed on the document and does not allow editing."
             },
             "dynamic_attr": {
-              "label": "Dữ liệu nền - Thuộc tính - {{attr}}"
-            } 
+              "label": "Base Data - Attribute - {{attr}}"
+            }
           },
           "dropdown_select": {
             "label": "Select Value",
             "description": ""
+          },
+          "free_text": {
+            "label": "Free Text",
+            "description": ""
+          }
+        },
+        "free_text_form": {
+          "fields": {
+            "title_label": "Title *",
+            "title_placeholder": "Enter title",
+            "answer_type_label": "Answer Type",
+            "min_char_label": "Enter minimum characters",
+            "max_char_label": "Enter maximum characters",
+            "confirm_type_email": "Email address",
+            "confirm_type_phone": "Phone number",
+            "confirm_type_date": "Date format",
+            "confirm_type_number": "Number (default)",
+            "confirm_type_label": "Confirm content",
+            "min_value_label": "Minimum value",
+            "max_value_label": "Maximum value"
+          },
+          "options": {
+            "min": "Minimum characters",
+            "max": "Maximum characters",
+            "exact": "Exact number of characters",
+            "confirm": "Confirm content"
+          },
+          "errors": {
+            "title_required": "Please enter a title",
+            "title_too_long": "Title cannot exceed {{max}} characters",
+            "min_char_required": "Please enter the minimum number of characters",
+            "max_char_required": "Please enter the maximum number of characters",
+            "char_invalid": "Please enter a valid number of characters (too large)",
+            "max_char_less_than_min": "Maximum characters must be greater than minimum characters",
+            "min_value_positive": "Minimum value must be greater than 0",
+            "max_value_positive": "Maximum value must be greater than 0",
+            "max_value_greater_than_min": "Maximum value must be greater than minimum value",
+            "min_value_too_large": "Minimum value is too large, please re-enter",
+            "max_value_too_large": "Maximum value is too large, please re-enter"
+          }
+        },
+        "dropdown_form": {
+          "title_label": "Title *",
+          "title_placeholder": "Enter title",
+          "option_placeholder": "Enter value",
+          "option_count_title": "Customize number of values",
+          "errors": {
+            "title_required": "Please enter a title",
+            "title_too_long": "Title cannot exceed {{max}} characters",
+            "option_required": "Please enter option {{index}}",
+            "option_too_long": "Option {{index}} cannot exceed {{max}} characters",
+            "options_minimum": "At least {{min}} options are required (current: {{count}})"
+          },
+          "buttons": {
+            "add_option": "Add option",
+            "remove_option": "Remove option"
           }
         }
       }

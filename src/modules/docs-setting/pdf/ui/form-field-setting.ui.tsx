@@ -7,7 +7,7 @@ import DropdownForm from "./form/dropdown.ui";
 import React from "react";
 import {CustomerAttributeData, FormFieldSetting} from "../types/pdf-setting.type";
 import {Box, Grid} from "@mui/material";
-import {FIELD_OPTS} from "@/modules/docs-setting/pdf/pdf.const";
+import {FIELD_OPTS, FIELD_VALUE_TYPE} from "@/modules/docs-setting/pdf/pdf.const";
 import { useTranslation } from 'react-i18next';
 import {pdfLogger} from "@/modules/docs-setting/pdf/services/logger.service";
 
@@ -27,11 +27,12 @@ type OptionData = {
 const FormFieldSettingUI = React.forwardRef((props: IProps, ref) => {
   const {data, onChange, attributes, selectedField} = props;
   const { t } = useTranslation();
+  const ns = "modules.docs_setting.pdf.field_opts";
   
   const [field, setField] = React.useState<any>({...props.data});
   const optRef = React.useRef<{ save: () => any }>(null);
   
-  const [opt, setOpt] = React.useState<string>(props.data?.setting?.type || 'free_text');
+  const [opt, setOpt] = React.useState<string>(props.data?.setting?.type || FIELD_VALUE_TYPE.FREE_TEXT);
   const [fieldOpts, setFieldOpts] = React.useState<OptionData[]>([]);
   
   React.useEffect(() => {
@@ -45,7 +46,7 @@ const FormFieldSettingUI = React.forwardRef((props: IProps, ref) => {
     
     attributes?.forEach((attribute) => {
       optInit.push({
-        label: t('modules.docs_setting.pdf.field_opts.base.dynamic_attr.label', {attr: attribute.label}),
+        label: t(`${ns}.base.dynamic_attr.label`, {attr: attribute.label}),
         value: attribute.value
       })
     });
@@ -92,26 +93,23 @@ const FormFieldSettingUI = React.forwardRef((props: IProps, ref) => {
     padding: '12px 8px'
   }
   return (
-    <Box sx={['free_text', 'dropdown_select'].includes(opt) ? styleBox : {}}>
+    <Box sx={[FIELD_VALUE_TYPE.FREE_TEXT, FIELD_VALUE_TYPE.DROPDOWN_SELECT].includes(opt) ? styleBox : {}}>
       <Grid container rowSpacing={2}>
         <Grid size={12}>
         <div className={"pdf_form-field-setting--item"}>
           <div className={"pdf_form-field-label"}>
-            <p className={'pdf_text-pos'}>Vị trí {data.position}</p>
+            <p className={'pdf_text-pos'}>{t(`${ns}.text.position`, {position: data.position})}</p>
           </div>
           <FormControl sx={{width: '100%', textAlign: 'left'}} size="small">
-            <InputLabel id={"pdf-select-field-" + fieldId}>Loại thông tin*</InputLabel>
+            <InputLabel id={"pdf-select-field-" + fieldId}>{t(`${ns}.text.type_info`)}</InputLabel>
             <Select
               labelId={"pdf-select-field-" + fieldId}
               id={"pdf-field-setting" + fieldId}
               defaultValue={opt}
               value={opt}
-              label="Loại thông tin*"
+              label={t(`${ns}.text.type_info`)}
               onChange={onFieldChange}
             >
-              <MenuItem key={'free_text_' + fieldId} value={'free_text'}>
-                <em>Free text</em>
-              </MenuItem>
               {fieldOpts.map((item: OptionData) => (
                 <MenuItem key={item.value + fieldId} value={item.value}>{item.label}</MenuItem>
               ))}
@@ -120,27 +118,27 @@ const FormFieldSettingUI = React.forwardRef((props: IProps, ref) => {
         </div>
         </Grid>
       
-      {opt === 'free_text' && (
+      {opt === FIELD_VALUE_TYPE.FREE_TEXT && (
         <Grid size={12}>
           <div className={"f-start"}>
             <FreeTextForm
               /*@ts-ignore*/
               ref={(r) => (optRef.current = r)}
               data={field} 
-              onSaveSetting={(d) => handleSaveSetting('free_text', d)}
+              onSaveSetting={(d) => handleSaveSetting(FIELD_VALUE_TYPE.FREE_TEXT, d)}
             />
           </div>
         </Grid>
       )}
       
-      {opt === 'dropdown_select' && (
+      {opt === FIELD_VALUE_TYPE.DROPDOWN_SELECT && (
         <Grid size={12}>
           <div className={"f-start"}>
             <DropdownForm
               /*@ts-ignore*/
               ref={(r) => (optRef.current = r)}
               data={field} 
-              onSaveSetting={(d) => handleSaveSetting('dropdown_select', d)}
+              onSaveSetting={(d) => handleSaveSetting(FIELD_VALUE_TYPE.DROPDOWN_SELECT, d)}
             />
           </div>
         </Grid>

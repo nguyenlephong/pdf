@@ -12,6 +12,11 @@ export const FIELD_VALUE_TYPE = {
 
 export const FIELD_OPTS = [
   {
+    label: 'modules.docs_setting.pdf.field_opts.free_text.label',
+    value: FIELD_VALUE_TYPE.FREE_TEXT,
+    description: 'modules.docs_setting.pdf.field_opts.free_text.description',
+  },
+  {
     label: 'modules.docs_setting.pdf.field_opts.system.sign_date.label',
     value: FIELD_VALUE_TYPE.SYSTEM_SIGN_DATE,
     description: 'modules.docs_setting.pdf.field_opts.system.sign_date.description'

@@ -22,6 +22,7 @@ import {
   TextField,
   Typography
 } from '@mui/material';
+import {useTranslation} from "react-i18next";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -56,6 +57,9 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
     onUpdateLoading,
     config,
   } = props;
+  
+  const {t} = useTranslation();
+  
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [isFirstRender, setIsFirstRender] = useState<boolean>(true);
@@ -635,7 +639,6 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
               setDragOverlapBehavior={setDragOverlapBehavior}
             />
             
-            {/* Debug delete button */}
             {selectedField && (
               <div style={{display: "flex", alignItems: "center", gap: "12px"}}>
                 <Button
@@ -714,10 +717,10 @@ const PdfViewerUi: React.FC<PDFViewerProps> = (props) => {
             >
               <Box>
                 <Typography variant="h6" textAlign="left">
-                  Hình dạng
+                  {t("modules.docs_setting.pdf.viewer.title")}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" textAlign="left">
-                  Kéo thả hình vào tài liệu
+                  {t("modules.docs_setting.pdf.viewer.description")}
                 </Typography>
               </Box>
               

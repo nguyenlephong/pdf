@@ -3,41 +3,23 @@
     "save": "Lưu",
     "cancel": "Hủy",
     "delete": "Xóa",
-    "edit": "Chỉnh sửa",
-    "close": "Đóng",
-    "confirm": "Xác nhận",
-    "yes": "Có",
-    "no": "Không",
-    "ok": "Đồng ý",
     "back": "Quay lại",
     "next": "Tiếp theo",
-    "loading": "Đang tải...",
-    "search": "Tìm kiếm"
+    "loading": "Đang tải..."
   },
   "modules": {
     "docs_setting": {
       "pdf": {
-        "toolbar": {
-          "title": "Công cụ PDF",
-          "zoom_in": "Phóng to",
-          "zoom_out": "Thu nhỏ",
-          "fit_to_screen": "Vừa với màn hình",
-          "add_field": "Thêm trường",
-          "delete_field": "Xóa trường"
-        },
         "viewer": {
-          "page_label": "Trang {{current}} trên {{total}}",
-          "loading": "Đang tải tệp PDF...",
-          "no_file": "Chưa chọn tệp PDF nào",
-          "upload_button": "Chọn tệp PDF"
-        },
-        "field_types": {
-          "text": "Trường văn bản",
-          "number": "Trường số",
-          "date": "Trường ngày",
-          "email": "Trường email"
+          "title": "Hình dạng",
+          "description": "Kéo thả hình vào tài liệu"
         },
         "field_opts": {
+          "text": {
+            "conf_title": "Chọn vị trí và cấu hình điền",
+            "position": "Vị trí {{position}}",
+            "type_info": "Loại thông tin*"
+          },
           "system": {
             "sign_date": {
               "label": "Hệ thống - Ngày tháng năm ký",
@@ -76,6 +58,62 @@
           "dropdown_select": {
             "label": "Chọn giá trị",
             "description": ""
+          },
+          "free_text": {
+            "label": "Free text",
+            "description": ""
+          }
+        },
+        "free_text_form": {
+          "fields": {
+            "title_label": "Tựa đề *",
+            "title_placeholder": "Nhập tiêu đề",
+            "answer_type_label": "Hình thức trả lời",
+            "min_char_label": "Nhập số ký tự tối thiểu",
+            "max_char_label": "Nhập số ký tự tối đa",
+            "confirm_type_email": "Địa chỉ email",
+            "confirm_type_phone": "Số điện thoại",
+            "confirm_type_date": "Định dạng ngày",
+            "confirm_type_number": "Number (mặc định)",
+            "confirm_type_label": "Xác nhận nội dung",
+            "min_value_label": "Giá trị nhỏ nhất",
+            "max_value_label": "Giá trị lớn nhất"
+          },
+          "options": {
+            "min": "Số ký tự tối thiểu",
+            "max": "Số ký tự tối đa",
+            "exact": "Chọn số ký tự",
+            "confirm": "Xác nhận nội dung"
+          },
+          "errors": {
+            "title_required": "Vui lòng nhập tiêu đề",
+            "title_too_long": "Tựa đề không được vượt quá {{max}} ký tự",
+            "min_char_required": "Vui lòng nhập số ký tự tối thiểu",
+            "max_char_required": "Vui lòng nhập số ký tự tối đa",
+            "char_invalid": "Vui lòng nhập số ký tự hợp lệ (quá lớn)",
+            "max_char_less_than_min": "Ký tự tối đa phải lớn hơn ký tự tối thiểu",
+            "min_value_positive": "Giá trị nhỏ nhất phải > 0",
+            "max_value_positive": "Giá trị lớn nhất phải > 0",
+            "max_value_greater_than_min": "Giá trị lớn nhất phải lớn hơn giá trị nhỏ nhất",
+            "min_value_too_large": "Giá trị nhỏ nhất quá lớn, vui lòng nhập lại",
+            "max_value_too_large": "Giá trị lớn nhất quá lớn, vui lòng nhập lại"
+          }
+        },
+        "dropdown_form": {
+          "title_label": "Tựa đề *",
+          "title_placeholder": "Nhập tiêu đề",
+          "option_placeholder": "Điền giá trị",
+          "option_count_title": "Tùy chỉnh số lượng giá trị",
+          "errors": {
+            "title_required": "Vui lòng nhập tiêu đề",
+            "title_too_long": "Tựa đề không được vượt quá {{max}} ký tự",
+            "option_required": "Vui lòng nhập đáp án thứ {{index}}",
+            "option_too_long": "Đáp án thứ {{index}} không được vượt quá {{max}} ký tự",
+            "options_minimum": "Phải có ít nhất {{min}} đáp án (hiện tại: {{count}})"
+          },
+          "buttons": {
+            "add_option": "Thêm đáp án",
+            "remove_option": "Xóa đáp án"
           }
         }
       }

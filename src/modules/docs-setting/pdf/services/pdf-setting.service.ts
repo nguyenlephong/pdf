@@ -2,6 +2,7 @@ import {PDFDocument, PDFTextField, rgb, StandardFonts} from 'pdf-lib';
 import {PDFFormData} from '../types/form-field.type';
 import {FormFieldSetting, PDFSettingData} from "../types/pdf-setting.type";
 import { pdfLogger } from '@/modules/docs-setting/pdf/services/logger.service';
+import {FIELD_VALUE_TYPE} from "@/modules/docs-setting/pdf/pdf.const";
 
 export class PDFSettingService {
   /**
@@ -298,7 +299,7 @@ export class PDFSettingService {
     
     formFields.forEach(field => {
       switch (field.meta.type) {
-        case 'free_text':
+        case FIELD_VALUE_TYPE.FREE_TEXT:
           sampleData[field.id] = `Sample #${field.position} ${field.id}`;
           break;
         case 'date':

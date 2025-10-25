@@ -4,6 +4,7 @@ import {PDFConfigService} from '../services/config-pdf.service';
 import FieldItemSettingUI from './form-field-setting.ui';
 import {Box, Grid, Button} from "@mui/material";
 import { pdfLogger } from '@/modules/docs-setting/pdf/services/logger.service';
+import {useTranslation} from "react-i18next";
 
 interface FormConfigPanelProps {
   config?: ToolSettingConfig;
@@ -33,6 +34,8 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
     onLoadPDFWithConfig,
     onSaveSetting
   } = props;
+  
+  const {t} = useTranslation();
   
   const childRefs = React.useRef<Record<string, { save: () => any }>>({});
   
@@ -66,8 +69,12 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
   return (
     <div className="pdf-config-panel">
       <div className={'f-between'}>
-        <h1>Chọn vị trí và cấu hình điền</h1>
-        {formFields.length > 0 && <Button onClick={handleSaveAll} variant="contained">Save</Button>}
+        <h2>{t('modules.docs_setting.pdf.field_opts.text.conf_title')}</h2>
+        {formFields.length > 0 && (
+          <Button onClick={handleSaveAll} variant="contained">
+            {t('common.save')}
+          </Button>
+        )}
       </div>
       <Grid container rowSpacing={2} sx={{mt: 3}}>
         {formFields
