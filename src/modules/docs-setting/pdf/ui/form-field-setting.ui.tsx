@@ -36,6 +36,10 @@ const FormFieldSettingUI = React.forwardRef((props: IProps, ref) => {
   const [fieldOpts, setFieldOpts] = React.useState<OptionData[]>([]);
   
   React.useEffect(() => {
+    setField({...field, ...data});
+  }, [data])
+
+  React.useEffect(() => {
     let optInit: any[] = FIELD_OPTS.map((opt) => {
       return {
         ...opt,

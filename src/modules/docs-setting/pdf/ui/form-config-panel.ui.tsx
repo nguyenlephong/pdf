@@ -68,7 +68,6 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
       ts: new Date().toISOString(),
       version: '1.0'
     };
-    pdfLogger.log(`👨‍🎓 PhongNguyen 🎯 handleSaveAll 👉 configExport 📝:`, configExport)
     if (onSaveSetting) onSaveSetting(configExport);
   };
   
