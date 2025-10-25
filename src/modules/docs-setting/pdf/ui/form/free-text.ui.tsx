@@ -2,6 +2,7 @@ import React, {useEffect, useState} from "react";
 import {Box, Divider, FormControlLabel, FormLabel, Grid, Radio, RadioGroup, TextField,} from "@mui/material";
 import {useTranslation} from "react-i18next";
 import NumericInput from "@/modules/docs-setting/pdf/ui/form/number-input.ui";
+import {FIELD_VALUE_TYPE} from "@/modules/docs-setting/pdf/pdf.const";
 
 type AnswerType = "min" | "max" | "exact" | "confirm";
 type ConfirmType = "email" | "phone" | "date" | "number";
@@ -179,7 +180,13 @@ const FreeTextForm: React.FC<ItemConfProps> = React.forwardRef(({ data, onSaveSe
         max_value: form.maxValue,
       };
       onSaveSetting(dataSaving);
-      return dataSaving;
+      return {
+        ...data,
+        setting: {
+          ...dataSaving,
+          type: FIELD_VALUE_TYPE.FREE_TEXT
+        }
+      };
     }
     
     return -1;

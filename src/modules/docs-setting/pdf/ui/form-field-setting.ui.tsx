@@ -56,10 +56,11 @@ const FormFieldSettingUI = React.forwardRef((props: IProps, ref) => {
   React.useImperativeHandle(ref, () => ({
     save: () => {
       const data = optRef.current?.save();
-      pdfLogger.log("📨 ChildForm forwarded save:", data);
+      pdfLogger.log("📨 ChildForm forwarded save:", data, field);
+      if (!data) return field;
       return data
     },
-  }));
+  }), [field]);
   
   const handleSaveSetting = (type: string, settingData: any) => {
     const newField: FormFieldSetting = {
@@ -69,6 +70,7 @@ const FormFieldSettingUI = React.forwardRef((props: IProps, ref) => {
         ...settingData
       }
     };
+    
     setField(newField);
     onChange(newField);
   }
@@ -76,13 +78,18 @@ const FormFieldSettingUI = React.forwardRef((props: IProps, ref) => {
   const onFieldChange = (event: SelectChangeEvent) => {
     const newType = event.target.value;
     setOpt(newType);
+    
+    // reset setting form for two specific type
+    const oldSetting = [FIELD_VALUE_TYPE.FREE_TEXT, FIELD_VALUE_TYPE.DROPDOWN_SELECT].includes(newType) ? (field?.setting ?? {}) : {}
+    
     let fieldUpdate: FormFieldSetting = {
       ...field,
       setting: {
-        ...(field?.setting ?? {}),
+        ...oldSetting,
         type: newType
       }
     };
+    setField(fieldUpdate);
     onChange(fieldUpdate);
   };
   

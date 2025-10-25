@@ -2,6 +2,7 @@ import React, {useEffect, useState} from "react";
 import {Box, IconButton, TextField, Typography} from "@mui/material";
 import {AddCircleOutlineOutlined, RemoveCircleOutlineOutlined} from "@mui/icons-material";
 import {useTranslation} from "react-i18next";
+import {FIELD_VALUE_TYPE} from "@/modules/docs-setting/pdf/pdf.const";
 
 type SavePayload = {
   title: string;
@@ -120,7 +121,13 @@ const DropdownForm: React.FC<DropdownFormProps> = React.forwardRef(({data, onSav
         options: formData.options,
       };
       onSaveSetting(dataSaving);
-      return dataSaving;
+      return {
+        ...data,
+        setting: {
+          ...dataSaving,
+          type: FIELD_VALUE_TYPE.DROPDOWN_SELECT
+        }
+      };
     }
     
     return -1;

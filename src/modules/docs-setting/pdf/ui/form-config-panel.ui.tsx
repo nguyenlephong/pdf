@@ -64,11 +64,11 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
     
     let configExport: PDFSettingData = {
       name: "config.json",
-      form_fields: formFields,
+      form_fields: results.map(x => x.data),
       ts: new Date().toISOString(),
       version: '1.0'
     };
-    pdfLogger.log(`👨‍🎓 PhongNguyen 🎯 form-config-panel.ui.tsx 👉 handleSaveAll 📝:`, config)
+    pdfLogger.log(`👨‍🎓 PhongNguyen 🎯 handleSaveAll 👉 configExport 📝:`, configExport)
     if (onSaveSetting) onSaveSetting(configExport);
   };
   
