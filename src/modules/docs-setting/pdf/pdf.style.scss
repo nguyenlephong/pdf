@@ -1,8 +1,4 @@
 .mfe-pdf-setting-page {
-  display: flex;
-  flex-direction: column;
-  padding: 24px;
-
 
   .pdf-controls-bar {
     display: flex;
@@ -148,9 +144,6 @@
   }
   
   .pdf-config-container {
-    width: 100%;
-    padding: 0 12px;
-    
     .pdf-config-panel {
       h1 {
         text-align: left;

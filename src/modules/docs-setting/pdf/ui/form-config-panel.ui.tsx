@@ -2,7 +2,7 @@ import React from 'react';
 import {CustomerAttributeData, FormFieldSetting, PDFSettingData, ToolSettingConfig} from '../types/pdf-setting.type';
 import {PDFConfigService} from '../services/config-pdf.service';
 import FieldItemSettingUI from './form-field-setting.ui';
-import {Box, Grid, Button} from "@mui/material";
+import {Box, Grid, Button, Typography} from "@mui/material";
 import { pdfLogger } from '@/modules/docs-setting/pdf/services/logger.service';
 import {useTranslation} from "react-i18next";
 
@@ -74,7 +74,9 @@ const FormConfigPanelUi: React.FC<FormConfigPanelProps> = (props) => {
   return (
     <div className="pdf-config-panel">
       <div className={'f-between'}>
-        <h2>{t('modules.docs_setting.pdf.field_opts.text.conf_title')}</h2>
+        <Typography variant="h5" fontWeight={'bold'} textAlign="left">
+          {t('modules.docs_setting.pdf.field_opts.text.conf_title')}
+        </Typography>
         {formFields.length > 0 && (
           <Button onClick={handleSaveAll} variant="contained">
             {t('common.save')}
