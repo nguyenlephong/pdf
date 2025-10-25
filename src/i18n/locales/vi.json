@@ -1,0 +1,84 @@
+{
+  "common": {
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "delete": "Xóa",
+    "edit": "Chỉnh sửa",
+    "close": "Đóng",
+    "confirm": "Xác nhận",
+    "yes": "Có",
+    "no": "Không",
+    "ok": "Đồng ý",
+    "back": "Quay lại",
+    "next": "Tiếp theo",
+    "loading": "Đang tải...",
+    "search": "Tìm kiếm"
+  },
+  "modules": {
+    "docs_setting": {
+      "pdf": {
+        "toolbar": {
+          "title": "Công cụ PDF",
+          "zoom_in": "Phóng to",
+          "zoom_out": "Thu nhỏ",
+          "fit_to_screen": "Vừa với màn hình",
+          "add_field": "Thêm trường",
+          "delete_field": "Xóa trường"
+        },
+        "viewer": {
+          "page_label": "Trang {{current}} trên {{total}}",
+          "loading": "Đang tải tệp PDF...",
+          "no_file": "Chưa chọn tệp PDF nào",
+          "upload_button": "Chọn tệp PDF"
+        },
+        "field_types": {
+          "text": "Trường văn bản",
+          "number": "Trường số",
+          "date": "Trường ngày",
+          "email": "Trường email"
+        },
+        "field_opts": {
+          "system": {
+            "sign_date": {
+              "label": "Hệ thống - Ngày tháng năm ký",
+              "description": "Ứng dụng tự động lấy ngày hiện tại khi ký thông tin, không cho phép chỉnh sửa."
+            },
+            "cccd_number": {
+              "label": "Hệ thống - Số CCCD khi xác thực",
+              "description": "Ứng dụng tự động lấy số CCCD từ chứng thư số của người xác thực, không cho phép chỉnh sửa."
+            },
+            "cccd_name": {
+              "label": "Hệ thống - Tên trên CCCD khi xác thực",
+              "description": "Ứng dụng tự động lấy họ tên từ chứng thư số (CCCD) của người xác thực, không cho phép chỉnh sửa."
+            },
+            "cccd_address": {
+              "label": "Hệ thống - Địa chỉ trên CCCD khi xác thực",
+              "description": "Ứng dụng tự động lấy địa chỉ từ chứng thư số (CCCD) của người xác thực, không cho phép chỉnh sửa."
+            }
+          },
+          "base": {
+            "customer_code": {
+              "label": "Dữ liệu nền - Mã khách hàng",
+              "description": "Ứng dụng tự động lấy mã khách hàng (thương hiệu) hiển thị trên tài liệu, không cho phép chỉnh sửa."
+            },
+            "customer_name": {
+              "label": "Dữ liệu nền - Tên khách hàng",
+              "description": "Ứng dụng tự động lấy tên khách hàng (thương hiệu) hiển thị trên tài liệu, không cho phép chỉnh sửa."
+            },
+            "customer_address": {
+              "label": "Dữ liệu nền - Địa chỉ",
+              "description": "Ứng dụng tự động lấy địa chỉ khách hàng (thương hiệu) hiển thị trên tài liệu, không cho phép chỉnh sửa."
+            },
+            "dynamic_attr": {
+              "label": "Dữ liệu nền - Thuộc tính - {{attr}}"
+            }
+          },
+          "dropdown_select": {
+            "label": "Chọn giá trị",
+            "description": ""
+          }
+        }
+      }
+    }
+  }
+}

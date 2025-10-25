@@ -13,6 +13,7 @@ import {
 import {PDFSettingService} from "./services/pdf-setting.service";
 import {Box, Grid} from "@mui/material";
 import LinearProgress from '@mui/material/LinearProgress';
+import {useTranslation} from "react-i18next";
 
 interface IProps {
   pdfUrl?: string; // CDN URL or local file path
@@ -24,6 +25,8 @@ interface IProps {
 }
 
 function PDFSettingPage(props: IProps) {
+  const { i18n } = useTranslation();
+  
   const {pdfUrl, settingData, onSaveSetting, onChangeSetting, attributes, config} = props;
   
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -40,6 +43,14 @@ function PDFSettingPage(props: IProps) {
   React.useEffect(() => {
     if (props) console.log("PDFSettingPage received new props: ", props);
   }, [props]);
+  
+  React.useEffect(() => {
+    if (config?.lang) {
+      i18n.changeLanguage(config?.lang).then(() => {
+        console.log("Language changed to: ", config?.lang);
+      });
+    }
+  }, [config]);
   
   React.useEffect(() => {
     if (settingData) {

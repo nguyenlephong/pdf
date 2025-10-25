@@ -7,6 +7,9 @@ import DropdownForm from "./form/dropdown.ui";
 import React from "react";
 import {CustomerAttributeData, FormFieldSetting} from "../types/pdf-setting.type";
 import {Box, Grid} from "@mui/material";
+import {FIELD_OPTS} from "@/modules/docs-setting/pdf/pdf.const";
+import { useTranslation } from 'react-i18next';
+
 
 type IProps = {
   data: FormFieldSetting;
@@ -19,51 +22,10 @@ type OptionData = {
   label: string;
   value: string;
 }
-const FIELD_OPTS = [
-  {
-    "label": "Hệ thống - Ngày tháng năm ký",
-    "value": "system_sign_date",
-    "description": "App tự động lấy ngày ký hiện tại khi thực hiện ký thông tin, không cho phép chỉnh sửa."
-  },
-  {
-    "label": "Hệ thống - Số CCCD khi xác thực",
-    "value": "system_cccd_number",
-    "description": "App tự động lấy số CCCD từ chứng thư số của người xác thực, không cho phép chỉnh sửa."
-  },
-  {
-    "label": "Hệ thống - Tên trên CCCD khi xác thực",
-    "value": "system_cccd_name",
-    "description": "App tự động lấy tên trên chứng thư số CCCD của người xác thực, không cho phép chỉnh sửa."
-  },
-  {
-    "label": "Hệ thống - Địa chỉ trên CCCD khi xác thực",
-    "value": "system_cccd_address",
-    "description": "App tự động lấy địa chỉ trên chứng thư số CCCD của người xác thực, không cho phép chỉnh sửa."
-  },
-  {
-    "label": "Dữ liệu nền - Mã khách hàng",
-    "value": "base_customer_code",
-    "description": "App tự động lấy mã khách hàng (brand) hiển thị trên tài liệu, không cho phép chỉnh sửa."
-  },
-  {
-    "label": "Dữ liệu nền - Tên khách hàng",
-    "value": "base_customer_name",
-    "description": "App tự động lấy tên khách hàng (brand) hiển thị trên tài liệu, không cho phép chỉnh sửa."
-  },
-  {
-    "label": "Dữ liệu nền - Địa chỉ",
-    "value": "base_customer_address",
-    "description": "App tự động lấy thông tin địa chỉ khách hàng (brand) hiển thị trên tài liệu, không cho phép chỉnh sửa."
-  },
-  {
-    "label": "Chọn giá trị",
-    "value": "dropdown_select",
-    "description": ""
-  }
-];
 
 const FormFieldSettingUI = React.forwardRef((props: IProps, ref) => {
   const {data, onChange, attributes, selectedField} = props;
+  const { t } = useTranslation();
   
   const [field, setField] = React.useState<any>({...props.data});
   const optRef = React.useRef<{ save: () => any }>(null);
@@ -72,10 +34,17 @@ const FormFieldSettingUI = React.forwardRef((props: IProps, ref) => {
   const [fieldOpts, setFieldOpts] = React.useState<OptionData[]>([]);
   
   React.useEffect(() => {
-    let optInit: any[] = FIELD_OPTS.map((opt) => (opt))
+    let optInit: any[] = FIELD_OPTS.map((opt) => {
+      return {
+        ...opt,
+        label: t(opt.label),
+        description: t(opt.description)
+      }
+    })
+    
     attributes?.forEach((attribute) => {
       optInit.push({
-        label: "Dữ liệu nền - Thuộc tính - " + attribute.label,
+        label: t('modules.docs_setting.pdf.field_opts.base.dynamic_attr.label', {attr: attribute.label}),
         value: attribute.value
       })
     });

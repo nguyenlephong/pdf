@@ -3,7 +3,7 @@ import PDFSettingPage from "./pdf.ui";
 import {CacheProvider} from '@emotion/react'
 import {ConfigProvider as AntConfigProvider} from 'antd'
 import muiCache from '../../../emotion-cache'
-
+import '@/i18n';
 let root: ReactDOM.Root | null = null;
 
 export function mount(target: HTMLElement | string, props?: any) {
