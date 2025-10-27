@@ -23,6 +23,7 @@ interface IProps {
   onSaveSetting?: (data: PDFSettingData) => void;
   onChangeSetting?: (data: PDFSettingData) => void;
   config?: ToolSettingConfig;
+  container?: any
 }
 
 function PDFSettingPage(props: IProps) {

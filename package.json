@@ -45,7 +45,8 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "rm -rf dist & vite build",
+    "move": "sh scripts/deploy-angular.sh",
     "preview": "vite preview"
   },
   "eslintConfig": {

@@ -11,6 +11,7 @@ import {Box, Grid} from "@mui/material";
 import {FIELD_OPTS, FIELD_VALUE_TYPE} from "@/modules/docs-setting/pdf/pdf.const";
 import { useTranslation } from 'react-i18next';
 import {pdfLogger} from "@/modules/docs-setting/pdf/services/logger.service";
+import {usePortalContainer} from "@/shared/shadow-portal.provider";
 
 
 type IProps = {
@@ -25,10 +26,11 @@ type OptionData = {
   value: string;
 }
 
+const ns = "modules.docs_setting.pdf.field_opts";
 const FormFieldSettingUI = React.forwardRef((props: IProps, ref) => {
   const {data, onChange, attributes, selectedField} = props;
   const { t } = useTranslation();
-  const ns = "modules.docs_setting.pdf.field_opts";
+  const { shadowRoot, portalContainer } = usePortalContainer();
   
   const [field, setField] = React.useState<FormFieldSetting>({...props.data});
   const optRef = React.useRef<{ save: () => any }>(null);
@@ -121,6 +123,11 @@ const FormFieldSettingUI = React.forwardRef((props: IProps, ref) => {
           <FormControl sx={{width: '100%', textAlign: 'left'}} size="small">
             <InputLabel id={"pdf-select-field-" + fieldId}>{t(`${ns}.text.type_info`)}</InputLabel>
             <Select
+              MenuProps={{
+                disablePortal: true,
+                // @ts-ignore
+                container: portalContainer ?? (shadowRoot instanceof ShadowRoot ? shadowRoot : document.body)
+              }}
               labelId={"pdf-select-field-" + fieldId}
               id={"pdf-field-setting" + fieldId}
               defaultValue={opt}
