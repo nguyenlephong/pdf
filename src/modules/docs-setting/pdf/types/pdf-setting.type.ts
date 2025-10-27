@@ -8,6 +8,7 @@ export interface PDFSettingData {
 export interface CustomerAttributeData {
   label: string;
   value: string;
+  [key: string]: any;
 }
 
 export interface FormFieldSetting {

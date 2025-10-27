@@ -24,6 +24,7 @@ type IProps = {
 type OptionData = {
   label: string;
   value: string;
+  [key: string]: string;
 }
 
 const ns = "modules.docs_setting.pdf.field_opts";
@@ -59,6 +60,7 @@ const FormFieldSettingUI = React.forwardRef((props: IProps, ref) => {
     
     attributes?.forEach((attribute) => {
       optInit.push({
+        ...(attribute ?? {}),
         label: t(`${ns}.base.dynamic_attr.label`, {attr: attribute.label}),
         value: attribute.value
       })
@@ -94,11 +96,13 @@ const FormFieldSettingUI = React.forwardRef((props: IProps, ref) => {
     
     // reset setting form for two specific type
     const oldSetting = [FIELD_VALUE_TYPE.FREE_TEXT, FIELD_VALUE_TYPE.DROPDOWN_SELECT].includes(newType) ? (field?.setting ?? {}) : {}
+    let attrObj = fieldOpts.find((x: OptionData) => x.value === newType);
     
     let fieldUpdate: FormFieldSetting = {
       ...field,
       setting: {
         ...oldSetting,
+        ...(attrObj ?? {}),
         type: newType
       }
     };
